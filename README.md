@@ -144,6 +144,12 @@ node scripts/qa.js http://127.0.0.1:8000/ qa-output
 
 截圖與 `report.json` 會放在 `qa-output/`（已在 `.gitignore`）。
 
+無法下載 Playwright 內建的瀏覽器時，可以改用電腦上已安裝的 Chrome：
+
+```bash
+QA_CHROME_PATH=/path/to/chrome node scripts/qa.js http://127.0.0.1:8000/ qa-output
+```
+
 檢查開發用套件有沒有已知弱點（只影響執行 QA 的電腦，網站本身不用 npm）：
 
 ```bash

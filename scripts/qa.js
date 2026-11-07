@@ -96,7 +96,8 @@ async function switchLang(page, lang) {
 }
 
 (async () => {
-  const browser = await chromium.launch();
+  // QA_CHROME_PATH: use an installed Chrome/Chromium instead of Playwright's bundled browser
+  const browser = await chromium.launch(process.env.QA_CHROME_PATH ? { executablePath: process.env.QA_CHROME_PATH } : {});
   try {
     // ---------- per-width light-mode checks in both languages ----------
     for (const width of [320, 375, 768, 1280, 1440]) {
