@@ -629,8 +629,11 @@
         var on = link.getAttribute('href') === '#' + id;
         if (on) {
           link.setAttribute('aria-current', 'true');
-          if (typeof link.scrollIntoView === 'function') {
-            try { link.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'auto' }); } catch (e) { /* 舊瀏覽器 */ }
+          // 把目前區塊的膠囊捲到導覽列中間。直接捲動清單，不用 link.scrollIntoView()：
+          // 那會把「下一個 Tab 的起點」重設回導覽連結，鍵盤使用者按導覽後就進不了目標區塊。
+          var list = link.parentNode && link.parentNode.parentNode;
+          if (list && typeof list.scrollTo === 'function') {
+            try { list.scrollTo({ left: link.offsetLeft - (list.clientWidth - link.offsetWidth) / 2, behavior: 'auto' }); } catch (e) { /* 舊瀏覽器 */ }
           }
         } else {
           link.removeAttribute('aria-current');

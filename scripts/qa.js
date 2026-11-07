@@ -540,6 +540,63 @@ async function switchLang(page, lang) {
       await context.close();
     }
 
+    // ---------- header & nav: sticky part, keyboard focus, text spacing (V-01/A-01, A-02, A-03, A-05, V-02) ----------
+    {
+      // 手機：捲動後只有導覽列固定在上方（品牌列捲走），膠囊的焦點框不被切掉
+      for (const [w, h] of [[375, 667], [320, 256]]) {
+        const { context, page } = await newPage(browser, { width: w, height: h, hasTouch: true, isMobile: true });
+        await page.goto(baseUrl, { waitUntil: 'load' });
+        await settle(page);
+        await page.evaluate(() => window.scrollTo({ top: 900, behavior: 'instant' }));
+        await page.waitForTimeout(400);
+        const st = await page.evaluate(() => { const r = document.querySelector('.site-header').getBoundingClientRect(); const a = document.querySelector('.site-nav__list a').getBoundingClientRect(); return { top: Math.round(r.top), bottom: Math.round(r.bottom), pillTop: Math.round(a.top) }; });
+        ok(`only the nav row stays fixed after scrolling @${w}x${h}`, st.top < 0 && st.bottom <= 60 && st.pillTop >= 6, JSON.stringify(st));
+        await page.screenshot({ path: path.join(outDir, `sticky-${w}x${h}.png`), clip: { x: 0, y: 0, width: w, height: Math.min(h, 200) } });
+        await context.close();
+      }
+      // 手機：Tab 走過導覽六項時，每顆膠囊都完整露出、不在右側淡出區底下；按 Enter 後下一個 Tab 進入目標區塊
+      for (const width of [375, 1280]) {
+        const { context, page } = await newPage(browser, { width, height: width < 700 ? 812 : 900 });
+        await page.goto(baseUrl, { waitUntil: 'load' });
+        await settle(page);
+        for (let i = 0; i < 4; i++) await page.keyboard.press('Tab');   // skip link → brand → ja → zh
+        const pos = [];
+        for (let i = 0; i < 6; i++) {
+          await page.keyboard.press('Tab');
+          await page.waitForTimeout(150);
+          pos.push(await page.evaluate(() => { const r = document.activeElement.getBoundingClientRect(); return { t: document.activeElement.textContent, l: Math.round(r.left), r: Math.round(r.right), vw: window.innerWidth }; }));
+        }
+        ok(`every nav pill is fully visible when focused @${width}`, pos.every(p => p.l >= 0 && p.r <= p.vw - (width < 900 ? 40 : 0)), JSON.stringify(pos));
+        if (width < 900) await page.screenshot({ path: path.join(outDir, `navfocus-${width}.png`), clip: { x: 0, y: 0, width, height: 120 } });
+        await page.keyboard.press('Shift+Tab'); await page.keyboard.press('Shift+Tab');   // 回到「フォト」
+        const href = await page.evaluate(() => document.activeElement.getAttribute('href'));
+        await page.keyboard.press('Enter');
+        await page.waitForTimeout(700);
+        const focusedSection = await page.evaluate(() => ({ id: document.activeElement.id, outline: getComputedStyle(document.activeElement).outlineStyle }));
+        await page.keyboard.press('Tab');
+        await page.waitForTimeout(200);
+        const after = await page.evaluate(() => ({ tag: document.activeElement.tagName, inGallery: !!document.activeElement.closest('#gallery') }));
+        ok(`Enter on a nav link moves focus to the section without an outline @${width}`, href === '#gallery' && focusedSection.id === 'gallery' && focusedSection.outline === 'none', JSON.stringify({ href, focusedSection }));
+        ok(`after a nav link, the next Tab lands inside the target section @${width}`, after.inGallery && after.tag === 'BUTTON', JSON.stringify(after));
+        // 語言鈕：選中態的底色要和群組底色不同（看得出哪個是選中的）
+        const lang = await page.evaluate(() => { const on = document.querySelector('.lang-switch__btn[aria-pressed="true"]'); return { btn: getComputedStyle(on).backgroundColor, group: getComputedStyle(document.querySelector('.lang-switch')).backgroundColor }; });
+        ok(`selected language button has a distinct background @${width}`, lang.btn !== lang.group && lang.btn !== 'rgba(0, 0, 0, 0)', JSON.stringify(lang));
+        await context.close();
+      }
+      // 桌機：放大文字間距（WCAG 1.4.12）時導覽換行，不在看不見的捲動容器裡被裁掉；未放大時仍是單列
+      for (const width of [900, 1280, 1440]) {
+        const { context, page } = await newPage(browser, { width, height: 900, bypassCSP: true });
+        await page.goto(baseUrl, { waitUntil: 'load' });
+        await settle(page);
+        await page.addStyleTag({ content: '* { line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important; } p { margin-bottom: 2em !important; }' });
+        await page.waitForTimeout(300);
+        const sp = await page.evaluate(() => { const l = document.querySelector('.site-nav__list'); const links = Array.from(l.querySelectorAll('a')); const last = links[links.length - 1].getBoundingClientRect(); return { sw: l.scrollWidth, cw: l.clientWidth, lastRight: Math.round(last.right), vw: window.innerWidth, over: document.documentElement.scrollWidth > window.innerWidth }; });
+        ok(`nav is not clipped with enlarged text spacing @${width}`, sp.sw <= sp.cw && sp.lastRight <= sp.vw && !sp.over, JSON.stringify(sp));
+        await page.locator('.site-header').screenshot({ path: path.join(outDir, `header-spacing-${width}.png`) });
+        await context.close();
+      }
+    }
+
     // ---------- axe-core (light + dark) ----------
     if (axeSource) {
       for (const scheme of ['light', 'dark']) {

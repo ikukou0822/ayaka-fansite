@@ -26,6 +26,7 @@
   --lightbox-bg: rgba(26, 20, 24, 0.94);
   --shadow-sm: 0 1px 2px rgba(70, 40, 52, 0.06), 0 4px 12px rgba(70, 40, 52, 0.06);
   --shadow-md: 0 2px 6px rgba(70, 40, 52, 0.06), 0 18px 40px rgba(70, 40, 52, 0.12);
+  --lang-on-bg: var(--surface);   /* 語言切換選中態的底色 */
   --glow-opacity: 0.9;
 
   /* 「虹」點綴：細緻的粉彩漸層 */
@@ -85,6 +86,7 @@
     --lightbox-bg: rgba(12, 10, 13, 0.96);
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.25);
     --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.3), 0 18px 40px rgba(0, 0, 0, 0.4);
+    --lang-on-bg: #3b3341;
     --glow-opacity: 0.45;
     --rainbow: linear-gradient(90deg, #d79aa9 0%, #d9b98f 20%, #d2c98f 40%, #9ec7ad 60%, #94b8d6 80%, #ad9fd2 100%);
   }
@@ -290,10 +292,18 @@ button, a { -webkit-tap-highlight-color: transparent; }
   color: var(--text-muted);
   line-height: 1.4;
 }
+.lang-switch__btn:hover { color: var(--accent-strong); }
 .lang-switch__btn[aria-pressed="true"] {
-  background: var(--accent-soft);
+  /* 選中態：白色（深色模式為較亮）小膠囊＋淡陰影，和群組底色分得開 */
+  background: var(--lang-on-bg);
   color: var(--accent-strong);
   font-weight: 600;
+  box-shadow: var(--shadow-sm);
+}
+@media (forced-colors: active) {
+  /* Windows 高對比：底色會被拿掉，選中的語言與目前區塊改用底線標示 */
+  .lang-switch__btn[aria-pressed="true"],
+  .site-nav__list a[aria-current="true"] { text-decoration: underline; text-underline-offset: 0.2em; }
 }
 
 .site-nav { flex-basis: 100%; min-width: 0; margin: 0 calc(var(--gutter) * -1) 0; position: relative; }
@@ -313,8 +323,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
   margin-top: -6px;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
-  scroll-snap-type: x proximity;
-  scroll-padding-inline: var(--gutter);
+  scroll-padding-inline: var(--gutter) 56px;   /* 右側留出淡出遮罩的寬度，鍵盤焦點捲進來時膠囊完整露出 */
 }
 .site-nav__list::-webkit-scrollbar { display: none; }
 .site-nav__list a {
@@ -330,7 +339,6 @@ button, a { -webkit-tap-highlight-color: transparent; }
   text-decoration: none;
   font-size: var(--step--1);
   line-height: 1.4;
-  scroll-snap-align: start;
 }
 .site-nav__list a:hover { background: var(--accent-soft); color: var(--accent-strong); }
 .site-nav__list a[aria-current="true"] { background: var(--accent-soft); color: var(--accent-strong); border-color: transparent; }
@@ -339,8 +347,10 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .site-header__inner { flex-wrap: nowrap; }
   .site-nav { flex-basis: auto; margin: 0 0 0 auto; }
   .site-nav::after { display: none; }
-  .site-nav__list { padding: 0; margin-top: 0; gap: 4px; }
+  /* 桌機導覽放不下時（例如放大文字間距）換行，不在看不見的捲動容器裡被裁掉 */
+  .site-nav__list { padding: 0; margin-top: 0; gap: 4px; flex-wrap: wrap; overflow: visible; justify-content: flex-end; }
   .site-nav__list a { min-height: 36px; padding: 0 12px; border-color: transparent; background: transparent; }
+  .brand__sub { white-space: nowrap; }
   .lang-switch { order: 3; margin-left: var(--space-3); }
   .lang-switch__btn { min-height: 32px; padding: 0 10px; white-space: nowrap; }
 }
@@ -613,6 +623,9 @@ button, a { -webkit-tap-highlight-color: transparent; }
 
 /* ---------- 區塊共用 ---------- */
 .section { padding: var(--space-6) 0; }
+/* 區塊有 tabindex="-1"：按導覽連結後焦點移到區塊，下一個 Tab 就是區塊裡的第一個元件。
+   區塊本身不是元件，不畫焦點框（焦點框留給下一個 Tab 的元件）。 */
+main section:focus { outline: none; }
 .section--soft { background: var(--bg-soft); }
 .section__inner {
   max-width: var(--content);
