@@ -87,11 +87,22 @@
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.25);
     --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.3), 0 18px 40px rgba(0, 0, 0, 0.4);
     --lang-on-bg: #3b3341;
-    --glow-opacity: 0.45;
+    --glow-opacity: 0.5;
     --rainbow: linear-gradient(90deg, #d79aa9 0%, #d9b98f 20%, #d2c98f 40%, #9ec7ad 60%, #94b8d6 80%, #ad9fd2 100%);
   }
   .hero__img, .gallery__img { filter: brightness(0.9) contrast(1.02); }
   .lightbox__img { filter: none; }
+  /* 深色模式的主視覺光暈：用飽和度較高、明度較低的四色，模糊放大；
+     淺色的粉彩只降透明度疊在深底上會變成一圈灰霧 */
+  .hero__glow {
+    background:
+      radial-gradient(45% 40% at 20% 25%, rgba(214, 110, 150, var(--glow-opacity)), transparent 60%),
+      radial-gradient(40% 36% at 80% 20%, rgba(100, 150, 220, var(--glow-opacity)), transparent 60%),
+      radial-gradient(45% 40% at 70% 85%, rgba(150, 115, 220, var(--glow-opacity)), transparent 60%),
+      radial-gradient(40% 36% at 20% 80%, rgba(220, 180, 90, var(--glow-opacity)), transparent 60%);
+    filter: blur(40px);
+    opacity: 0.6;
+  }
 }
 
 /* 繁體中文時優先使用台灣常見的字型，字形才會是台灣慣用的寫法 */
@@ -703,12 +714,14 @@ main section:focus { outline: none; }
 /* ---------- 個人資料 ---------- */
 .profile {
   border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);   /* 最後一條線由容器畫，兩欄時最後一格落單也會是完整的一條 */
 }
 .profile__row {
   display: grid;
   gap: var(--space-1);
   padding: var(--space-3) 0;
   border-bottom: 1px solid var(--line);
+  margin-bottom: -1px;                    /* 每列的底線和下一列（或容器）的線重疊，不會出現雙線 */
 }
 .profile__label {
   font-size: var(--step--1);
@@ -1122,12 +1135,21 @@ main section:focus { outline: none; }
 .lightbox__btn--next::before { transform: translate(-70%, -50%) rotate(-135deg); }
 .lightbox__btn--close::before,
 .lightbox__btn--close::after {
-  width: 18px; height: 1.5px;
-  background: currentColor;
+  width: 18px; height: 0;
+  border-top: 1.5px solid currentColor;   /* 用邊框畫 ×：Windows 高對比模式會保留邊框、拿掉背景色 */
 }
 .lightbox__btn--close::before { transform: translate(-50%, -50%) rotate(45deg); }
 .lightbox__btn--close::after  { transform: translate(-50%, -50%) rotate(-45deg); }
 .lightbox :focus-visible { outline-color: #fff; }
+
+/* 矮視窗（橫向手機、400% 縮放）：照片不再被其他列壓成縮圖，改成整個燈箱可上下捲動 */
+@media (max-height: 479px) {
+  .lightbox { overflow-y: auto; }
+  .lightbox__figure, .lightbox__stage { flex: 0 0 auto; }
+  .lightbox__img { max-height: none; width: min(100%, 120vh); }
+  .lightbox__hint { display: none; }
+  .lightbox__nav { position: sticky; bottom: 0; background: var(--lightbox-bg); }
+}
 
 @media (min-width: 900px) {
   .lightbox__figure { padding: 0 90px; }
@@ -1325,6 +1347,15 @@ main section:focus { outline: none; }
     transition: none !important;
   }
   .gallery__btn:hover .gallery__img { transform: none; }
+}
+
+/* ---------- 列印 ---------- */
+@media print {
+  .site-header { position: static; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .site-nav, .lang-switch, .hero__cta, .hero__glow, .share, .lightbox, .skip-link { display: none !important; }
+  .section__head { position: static; }
+  .gallery__item, .message, .timeline__item, .birthday { break-inside: avoid; }
+  .hero__figure, .hero__text, .hero__caption { animation: none; }
 }
 
 /* ---------- 404 頁 ---------- */

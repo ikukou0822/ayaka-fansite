@@ -358,6 +358,27 @@ async function switchLang(page, lang) {
       await context.close();
     }
 
+    // ---------- lightbox in short viewports (landscape phone, 400% zoom): the photo is not squeezed into a thumbnail (A-04) ----------
+    for (const [w, h] of [[568, 320], [320, 256]]) {
+      const { context, page } = await newPage(browser, { width: w, height: h, hasTouch: true, isMobile: true });
+      await page.goto(baseUrl, { waitUntil: 'load' });
+      await settle(page);
+      await page.locator('#gallery button').nth(3).click();
+      await page.waitForTimeout(600);
+      const lb = await page.evaluate(() => { const i = document.querySelector('dialog img').getBoundingClientRect(); const d = document.querySelector('dialog'); return { imgW: Math.round(i.width), imgH: Math.round(i.height), scrollable: d.scrollHeight > d.clientHeight, counterHidden: document.getElementById('lightbox-counter').getAttribute('aria-hidden') === 'true', hintHidden: document.getElementById('gallery-hint').hidden }; });
+      ok(`lightbox photo keeps a usable size in a short viewport @${w}x${h}`, lb.imgW >= Math.min(w, h) * 0.8 && lb.scrollable, JSON.stringify(lb));
+      if (w === 568) ok('lightbox counter and gallery hint are not read twice (aria-hidden / hidden)', lb.counterHidden && lb.hintHidden, JSON.stringify(lb));
+      await page.screenshot({ path: path.join(outDir, `lightbox-${w}x${h}.png`) });
+      await page.keyboard.press('ArrowRight');
+      await page.waitForTimeout(300);
+      const next = await page.evaluate(() => document.querySelector('dialog img').getAttribute('src'));
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(300);
+      const closed = await page.evaluate(() => !document.querySelector('dialog').open);
+      ok(`lightbox keys still work in a short viewport @${w}x${h}`, next === 'photos/ayaka-05.jpg' && closed, JSON.stringify({ next, closed }));
+      await context.close();
+    }
+
     // ---------- share button: without navigator.share it copies the canonical URL and announces it ----------
     for (const width of [375, 768, 1280]) {
       const { context, page } = await newPage(browser, { width, height: width < 700 ? 812 : 900, hasTouch: width < 700, isMobile: width < 700, permissions: ['clipboard-read', 'clipboard-write'] });
