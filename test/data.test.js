@@ -103,18 +103,9 @@ test('相簿與主視覺的照片檔案都存在，且有 alt 與尺寸（尺寸
   assert.ok(DATA.callPhotos.items.every((p) => /^photos\/call-\d{2}\.jpg$/.test(p.src)), '視訊回憶檔名應為 photos/call-NN.jpg');
 });
 
-test('photos/call-photos.json 與 data.js 的 callPhotos 一致', () => {
+test('photos/call-photos.json 與 data.js 的 callPhotos 一致（形狀相同：{ date, items }）', () => {
   const json = JSON.parse(fs.readFileSync(path.join(ROOT, 'photos', 'call-photos.json'), 'utf8'));
-  assert.equal(json.length, DATA.callPhotos.items.length);
-  json.forEach((entry, i) => {
-    const item = DATA.callPhotos.items[i];
-    assert.deepEqual(
-      { src: entry.src, alt_ja: entry.alt_ja, alt_zh: entry.alt_zh, width: entry.width, height: entry.height },
-      { src: item.src, alt_ja: item.alt_ja, alt_zh: item.alt_zh, width: item.width, height: item.height },
-      `call-photos.json 第 ${i + 1} 筆和 data.js 不同`
-    );
-    assert.equal(entry.date, item.date || DATA.callPhotos.date, `call-photos.json 第 ${i + 1} 筆的日期和 data.js 不同`);
-  });
+  assert.deepEqual(json, DATA.callPhotos, 'call-photos.json 和 data.js 的 callPhotos 不同（兩邊都要改）');
 });
 
 test('相簿第二組的介面文字都在', () => {
@@ -125,7 +116,15 @@ test('相簿第二組的介面文字都在', () => {
     assert.ok(DATA.ui.callPhotoCaptionDate[lang].includes('{date}'), `ui.callPhotoCaptionDate.${lang} 缺少 {date}`);
     assert.ok(/ビデオ通話|視訊/.test(DATA.footer.photoNotice[lang]), `footer.photoNotice.${lang} 應提到視訊截圖`);
     assert.ok(DATA.about.paragraphs.some((p) => /ビデオ通話|視訊/.test(p[lang])), `about 應提到視訊截圖（${lang}）`);
+    assert.ok(/ビデオ通話|視訊/.test(DATA.site.description[lang]), `site.description.${lang} 應提到視訊回憶（分享預覽與搜尋摘要）`);
   }
+});
+
+test('index.html 的 meta description 和 data.js 的日文 site.description 一致', () => {
+  const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  const m = html.match(/<meta name="description" content="([^"]*)">/);
+  assert.ok(m, 'index.html 找不到 meta description');
+  assert.equal(m[1], DATA.site.description.ja);
 });
 
 test('site.webp 為 true 時，每張照片的 WebP 版本都存在（scripts/make_images.py）', { skip: !DATA.site.webp }, () => {

@@ -276,7 +276,8 @@
   var callPhotos = DATA.callPhotos || {};
   var GROUPS = [
     { grid: '#gallery-grid', photos: DATA.photos || [], date: null, captionKey: 'photoCaptionDate' },
-    { grid: '#gallery-grid-call', photos: callPhotos.items || [], date: callPhotos.date || null, captionKey: 'callPhotoCaptionDate' }
+    // wrap：整組的外層（小標＋日期＋說明）；photos 為空時整個隱藏
+    { grid: '#gallery-grid-call', wrap: '#gallery-call', photos: callPhotos.items || [], date: callPhotos.date || null, captionKey: 'callPhotoCaptionDate' }
   ];
   function photoDate(group, photo) { return photo.date || group.date; }
   function photoCaption(group, photo) {
@@ -291,6 +292,8 @@
   function buildGrid(group, groupIndex) {
     var grid = qs(group.grid);
     if (!grid) { return; }
+    var wrap = group.wrap ? qs(group.wrap) : null;
+    if (wrap) { wrap.hidden = !group.photos.length; }
     clear(grid);
     group.photos.forEach(function (photo, index) {
       var li = el('li', 'gallery__item');

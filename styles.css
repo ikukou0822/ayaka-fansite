@@ -918,6 +918,8 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .gallery__caption-text { grid-column: 2; }
 @media (max-width: 699px) {
   .gallery__item:first-child { grid-column: 1 / -1; }
+  /* 第二組（視訊回憶）是次級群組，第一張不全寬 */
+  #gallery-grid-call .gallery__item:first-child { grid-column: auto; }
 }
 .gallery__date {
   display: block;
@@ -926,6 +928,9 @@ button, a { -webkit-tap-highlight-color: transparent; }
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.04em;
+  /* 手機的半寬格子放不下「2026年10月8日・ビデオ通話」時，只在「・」或空格處折行，不折出孤字 */
+  word-break: keep-all;
+  overflow-wrap: anywhere;
 }
 
 @media (hover: hover) {

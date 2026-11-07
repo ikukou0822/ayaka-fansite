@@ -158,6 +158,9 @@ async function switchLang(page, lang) {
         report.info.images = imgs;
         ok('gallery images are lazy', imgs.filter(i => /ayaka-0[1-9]/.test(i.src || '')).filter(i => i.loading === 'lazy').length >= 9, JSON.stringify(imgs.map(i => i.src + ':' + i.loading)));
         ok('call photos are lazy', imgs.filter(i => /call-0[1-9]/.test(i.src || '')).filter(i => i.loading === 'lazy').length === 9, JSON.stringify(imgs.filter(i => /call-/.test(i.src || '')).map(i => i.src + ':' + i.loading)));
+        // 只有主視覺是 eager，其餘（兩組相簿）都要 lazy
+        const eager = imgs.filter(i => i.loading !== 'lazy');
+        ok('only the hero image is eager', eager.length === 1 && /ayaka-07/.test(eager[0].src || ''), JSON.stringify(eager.map(i => i.src)));
         // scroll to bottom to trigger lazy load and ensure all images load
         await page.evaluate(async () => { for (let y = 0; y < document.body.scrollHeight; y += 400) { window.scrollTo({ top: y, behavior: 'instant' }); await new Promise(r => setTimeout(r, 60)); } window.scrollTo({ top: 0, behavior: 'instant' }); });
         await page.waitForTimeout(1500);
@@ -247,8 +250,21 @@ async function switchLang(page, lang) {
       {
         const callAlts = await page.evaluate(() => Array.from(document.querySelectorAll('#gallery-grid-call img')).map(i => i.getAttribute('alt') || ''));
         ok(`call photos all have alt @${width}`, callAlts.length === 9 && callAlts.every(a => a.trim()), JSON.stringify(callAlts));
-        const callHead = await page.evaluate(() => ({ title: (document.querySelector('#gallery-call-title') || {}).textContent || '', date: (document.querySelector('#gallery-call-date') || {}).textContent || '', dt: (document.querySelector('#gallery-call-date') || {}).getAttribute && document.querySelector('#gallery-call-date').getAttribute('datetime') }));
-        ok(`call group has heading and date @${width}`, callHead.title.trim().length > 0 && /2026/.test(callHead.date) && callHead.dt === '2026-10', JSON.stringify(callHead));
+        const callHead = await page.evaluate(() => {
+          const date = document.querySelector('#gallery-call-date');
+          const list = document.querySelector('#gallery-grid-call');
+          return {
+            title: (document.querySelector('#gallery-call-title') || {}).textContent || '',
+            date: date ? date.textContent : '',
+            dt: date ? date.getAttribute('datetime') : null,
+            dataDate: window.SITE_DATA.callPhotos.date,
+            hidden: (document.querySelector('#gallery-call') || {}).hidden,
+            role: list ? list.getAttribute('role') : null,
+            labelledby: list ? list.getAttribute('aria-labelledby') : null,
+          };
+        });
+        ok(`call group has heading and full date @${width}`, callHead.title.trim().length > 0 && /2026/.test(callHead.date) && /^\d{4}-\d{2}-\d{2}$/.test(callHead.dt || '') && callHead.dt === callHead.dataDate && callHead.hidden === false, JSON.stringify(callHead));
+        ok(`call grid is a labelled list (role=list, title + date) @${width}`, callHead.role === 'list' && /\bgallery-call-title\b/.test(callHead.labelledby || '') && /\bgallery-call-date\b/.test(callHead.labelledby || ''), JSON.stringify(callHead));
         const callFirst = page.locator('#gallery-grid-call button').nth(0);
         await callFirst.scrollIntoViewIfNeeded();
         await callFirst.focus();
@@ -380,11 +396,15 @@ async function switchLang(page, lang) {
         report.info[`axe_${scheme}`] = res;
         ok(`axe: no serious/critical violations (${scheme})`, res.filter(v => ['serious', 'critical'].includes(v.impact)).length === 0, JSON.stringify(res.filter(v => ['serious', 'critical'].includes(v.impact))));
         if (res.length) warn(`axe ${scheme} (all impacts)`, JSON.stringify(res));
-        // run axe with the lightbox open too
-        await page.locator('#gallery button').nth(0).click();
-        await page.waitForTimeout(400);
-        const res2 = await page.evaluate(async () => { const r = await window.axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] } }); return r.violations.map(v => ({ id: v.id, impact: v.impact, help: v.help, nodes: v.nodes.slice(0, 5).map(n => n.target.join(' ')) })); });
-        ok(`axe with lightbox open: no serious/critical (${scheme})`, res2.filter(v => ['serious', 'critical'].includes(v.impact)).length === 0, JSON.stringify(res2));
+        // run axe with the lightbox open too（兩組各開一次）
+        for (const [label, selector] of [['lightbox', '#gallery-grid button'], ['call lightbox', '#gallery-grid-call button']]) {
+          await page.locator(selector).nth(0).click();
+          await page.waitForTimeout(400);
+          const res2 = await page.evaluate(async () => { const r = await window.axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] } }); return r.violations.map(v => ({ id: v.id, impact: v.impact, help: v.help, nodes: v.nodes.slice(0, 5).map(n => n.target.join(' ')) })); });
+          ok(`axe with ${label} open: no serious/critical (${scheme})`, res2.filter(v => ['serious', 'critical'].includes(v.impact)).length === 0, JSON.stringify(res2));
+          await page.keyboard.press('Escape');
+          await page.waitForTimeout(300);
+        }
         await context.close();
       }
     } else warn('axe-core not installed; skipped');

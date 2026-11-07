@@ -7,10 +7,13 @@
     python3 scripts/import_photos.py 來源資料夾 --prefix call --anchor top
         裁切時固定上緣（預設），只裁掉下方多餘的部分；--anchor center / bottom 則固定中間或下緣
 
-轉好之後再執行 python3 scripts/make_images.py 產生 WebP 版本，
-並把每張的說明與尺寸寫進 photos/call-photos.json 與 data.js 的 callPhotos。
+轉好之後的步驟：
+    1. python3 scripts/make_images.py --match 'call-*.jpg'   # 只為這一組產生 WebP 版本
+    2. 把每張的說明與尺寸寫進 photos/call-photos.json 與 data.js 的 callPhotos（兩邊內容要一樣）
+    3. node --test   # 會檢查尺寸和 JPEG 實際尺寸一致、必須是 4:5、兩個檔案一致
 
-視訊回憶照片（2026 年 10 月）就是用這個腳本從 1206×1560 的截圖裁成 1200×1500。
+視訊回憶照片（2026-10-08）就是用這個腳本從 1206×1560 的截圖裁成 1204×1505。
+相簿的照片一律先經過這個腳本：node --test 會要求每張都是 4:5（容差 0.002），自己裁的圖很容易不過。
 
 需要 Pillow：pip install Pillow
 """
@@ -69,7 +72,7 @@ def main() -> None:
             # 不傳 exif / icc_profile，輸出的 JPEG 就沒有中繼資料
             im.save(target, "JPEG", quality=JPEG_QUALITY, optimize=True, progressive=True)
             print(f"{src.name} → {target.relative_to(ROOT) if target.is_relative_to(ROOT) else target}  {im.width}x{im.height}")
-    print("完成。接著執行 python3 scripts/make_images.py 產生 WebP。")
+    print(f"完成。接著執行 python3 scripts/make_images.py --match '{args.prefix}-*.jpg' 產生 WebP。")
 
 
 if __name__ == "__main__":
