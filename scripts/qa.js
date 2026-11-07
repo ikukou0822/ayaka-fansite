@@ -237,6 +237,17 @@ async function switchLang(page, lang) {
       const tiles = page.locator('#gallery button');
       const count = await tiles.count();
       ok(`gallery has 9 tile buttons @${width}`, count === 9, String(count));
+      if (width === 375) {
+        // 每顆按鈕的名稱只來自說明（aria-labelledby），說明本身不再被唸第二次
+        const names = await page.evaluate(() => Array.from(document.querySelectorAll('#gallery button')).map(b => {
+          const lab = (b.getAttribute('aria-labelledby') || '').split(/\s+/).map(id => (document.getElementById(id) || {}).textContent || '').join(' ').trim();
+          const cap = b.parentElement.querySelector('.gallery__caption');
+          return { lab, hidden: cap && cap.getAttribute('aria-hidden') === 'true', alt: b.querySelector('img').getAttribute('alt') };
+        }));
+        ok('gallery buttons are named once by their caption', names.every(n => n.lab && n.hidden && n.lab === n.alt), JSON.stringify(names.slice(0, 2)));
+        const lists = await page.evaluate(() => ['.site-nav__list', '#timeline-list', '#gallery-grid', '#messages-list'].map(s => (document.querySelector(s) || {}).getAttribute && document.querySelector(s).getAttribute('role')));
+        ok('nav, timeline, gallery and messages lists keep role="list"', lists.every(r => r === 'list'), JSON.stringify(lists));
+      }
       const third = tiles.nth(2);
       await third.scrollIntoViewIfNeeded();
       await third.focus();
@@ -250,10 +261,13 @@ async function switchLang(page, lang) {
       const img0 = await page.evaluate(() => { const i = document.querySelector('dialog img'); return i ? i.getAttribute('src') : null; });
       ok(`lightbox shows 3rd photo @${width}`, img0 === 'photos/ayaka-03.jpg', String(img0));
       await page.screenshot({ path: path.join(outDir, `lightbox-${width}.png`), fullPage: false });
+      const status0 = await page.evaluate(() => (document.querySelector('dialog [aria-live]') || {}).textContent || '');
       await page.keyboard.press('ArrowRight');
       await page.waitForTimeout(300);
       const img1 = await page.evaluate(() => { const i = document.querySelector('dialog img'); return i ? i.getAttribute('src') : null; });
       ok(`ArrowRight advances to 4th photo @${width}`, img1 === 'photos/ayaka-04.jpg', String(img1));
+      const status1 = await page.evaluate(() => (document.querySelector('dialog [aria-live]') || {}).textContent || '');
+      ok(`lightbox live region announces the new photo @${width}`, status0 !== status1 && /4/.test(status1) && /9/.test(status1) && status1.length > 5, `${status0} -> ${status1}`);
       await page.keyboard.press('ArrowLeft');
       await page.keyboard.press('ArrowLeft');
       await page.waitForTimeout(300);
@@ -309,6 +323,33 @@ async function switchLang(page, lang) {
         await page.keyboard.press('Escape');
       }
       ok(`no console errors in lightbox session @${width}`, page.__errors.length === 0, JSON.stringify(page.__errors));
+      await context.close();
+    }
+
+    // ---------- JavaScript disabled: only the notice, the brand mark and the hero photo remain ----------
+    for (const width of [375, 1280]) {
+      const context = await browser.newContext({ viewport: { width, height: width < 700 ? 812 : 900 }, deviceScaleFactor: scale, javaScriptEnabled: false, locale: 'ja-JP' });
+      const page = await context.newPage();
+      await page.goto(baseUrl, { waitUntil: 'load' });
+      await page.waitForTimeout(800);
+      await page.screenshot({ path: path.join(outDir, `nojs-${width}.png`), fullPage: true });
+      const r = await page.evaluate(() => {
+        const vis = (el) => { if (!el) return false; const b = el.getBoundingClientRect(); return b.width > 0 && b.height > 0 && getComputedStyle(el).visibility !== 'hidden'; };
+        const anyVisible = (sel) => Array.from(document.querySelectorAll(sel)).some(vis);
+        return {
+          notice: Array.from(document.querySelectorAll('.noscript')).filter(vis).length,
+          noticeFont: parseFloat(getComputedStyle(document.querySelector('.noscript')).fontSize),
+          mark: vis(document.querySelector('.brand__mark')),
+          heroW: Math.round((document.querySelector('.hero__img') || { getBoundingClientRect: () => ({ width: 0 }) }).getBoundingClientRect().width),
+          navPills: anyVisible('.site-nav__list a'), langBtns: anyVisible('.lang-switch__btn'), tiles: anyVisible('.countdown__tile'),
+          sections: anyVisible('.section'), cta: anyVisible('.hero__cta'), footer: anyVisible('.site-footer p'),
+          docH: document.documentElement.scrollHeight, sw: document.documentElement.scrollWidth, iw: window.innerWidth,
+        };
+      });
+      ok(`no-JS: notice is visible and readable @${width}`, r.notice >= 2 && r.noticeFont >= 16, JSON.stringify(r));
+      ok(`no-JS: brand mark and hero photo remain @${width}`, r.mark && r.heroW >= 200, JSON.stringify(r));
+      ok(`no-JS: no empty pills, countdown tiles or sections @${width}`, !r.navPills && !r.langBtns && !r.tiles && !r.sections && !r.cta && !r.footer, JSON.stringify(r));
+      ok(`no-JS: no horizontal overflow @${width}`, r.sw <= r.iw, JSON.stringify(r));
       await context.close();
     }
 

@@ -103,6 +103,8 @@ window.SITE_DATA = {
     lightboxPrev:    { ja: '前の写真', zh: '上一張' },
     lightboxNext:    { ja: '次の写真', zh: '下一張' },
     lightboxCounter: { ja: '{current} / {total}', zh: '{current} / {total}' },
+    // 切換照片時唸給螢幕閱讀器聽的句子（畫面上看不到）
+    lightboxAnnounce: { ja: '{total}枚中{current}枚目：{caption}', zh: '第 {current} 張，共 {total} 張：{caption}' },
     lightboxHint:    { ja: '← → で切り替え、Esc で閉じる', zh: '← → 切換，Esc 關閉' },
     lightboxHintTouch: { ja: 'スワイプで切り替え、写真の外をタップで閉じる', zh: '左右滑動切換，點照片外側關閉' },
 

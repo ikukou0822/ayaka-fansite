@@ -32,6 +32,7 @@
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="styles.css">
+  <noscript><link rel="stylesheet" href="nojs.css"></noscript>
 </head>
 <body>
   <a class="skip-link" href="#main" data-ui="skipLink"></a>
@@ -56,7 +57,7 @@
         <button type="button" class="lang-switch__btn" data-lang="zh" aria-pressed="false" data-ui="langZh" lang="zh-Hant"></button>
       </div>
       <nav class="site-nav" data-ui-aria-label="navLabel">
-        <ul class="site-nav__list">
+        <ul class="site-nav__list" role="list">
           <li><a href="#profile" data-ui="navProfile"></a></li>
           <li><a href="#birthday" data-ui="navBirthday"></a></li>
           <li><a href="#timeline" data-ui="navTimeline"></a></li>
@@ -143,7 +144,7 @@
           <h2 class="section__title" id="timeline-title" data-ui="timelineTitle"></h2>
           <p class="section__lead" data-ui="timelineLead"></p>
         </header>
-        <ol class="timeline" id="timeline-list"></ol>
+        <ol class="timeline" id="timeline-list" role="list"></ol>
       </div>
     </section>
 
@@ -155,7 +156,7 @@
           <p class="section__lead" data-ui="galleryLead"></p>
         </header>
         <p class="visually-hidden" id="gallery-hint"></p>
-        <ul class="gallery" id="gallery-grid"></ul>
+        <ul class="gallery" id="gallery-grid" role="list"></ul>
       </div>
     </section>
 
@@ -166,7 +167,7 @@
           <h2 class="section__title" id="messages-title" data-ui="messagesTitle"></h2>
           <p class="section__lead" data-ui="messagesLead"></p>
         </header>
-        <ul class="messages" id="messages-list"></ul>
+        <ul class="messages" id="messages-list" role="list"></ul>
       </div>
     </section>
 
@@ -194,6 +195,7 @@
   <dialog class="lightbox" id="lightbox" data-ui-aria-label="lightboxLabel" tabindex="-1">
     <div class="lightbox__bar">
       <p class="lightbox__counter" id="lightbox-counter"></p>
+      <p class="visually-hidden" id="lightbox-status" aria-live="polite" aria-atomic="true"></p>
     </div>
     <figure class="lightbox__figure">
       <div class="lightbox__stage" id="lightbox-stage">

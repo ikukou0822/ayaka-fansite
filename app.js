@@ -296,13 +296,23 @@
       picture.appendChild(img);
       frame.appendChild(picture);
       btn.appendChild(frame);
-      btn.setAttribute('aria-describedby', 'gallery-hint');
+      // 按鈕的無障礙名稱只來自下方的說明一次（圖片 alt 仍保留，給沒有 CSS 時用）；
+      // 說明本身標成 aria-hidden，螢幕閱讀器才不會把同一句唸兩遍。日期放進按鈕的描述。
+      var capId = 'gallery-caption-' + (index + 1);
+      var dateId = 'gallery-date-' + (index + 1);
+      btn.setAttribute('aria-labelledby', capId);
+      btn.setAttribute('aria-describedby', 'gallery-hint ' + dateId);
       btn.addEventListener('click', function () { openLightbox(index, btn); });
       li.appendChild(btn);
       var caption = el('p', 'gallery__caption');
+      caption.setAttribute('aria-hidden', 'true');
       caption.appendChild(el('span', 'gallery__index', pad2(index + 1)));
-      caption.appendChild(el('span', 'gallery__caption-text'));
-      caption.appendChild(el('span', 'gallery__date'));
+      var capText = el('span', 'gallery__caption-text');
+      capText.id = capId;
+      caption.appendChild(capText);
+      var dateEl = el('span', 'gallery__date');
+      dateEl.id = dateId;
+      caption.appendChild(dateEl);
       li.appendChild(caption);
       grid.appendChild(li);
     });
@@ -317,7 +327,7 @@
       if (!photo) { return; }
       var alt = photoAlt(photo);
       var dateText = photo.date ? fill(ui('photoCaptionDate'), { date: formatDate(photo.date) }) : '';
-      qs('.gallery__img', btn).setAttribute('alt', alt);   // 按鈕的無障礙名稱 = 圖片 alt
+      qs('.gallery__img', btn).setAttribute('alt', alt);
       qs('.gallery__caption-text', item).textContent = alt;
       qs('.gallery__date', item).textContent = dateText;
     });
@@ -341,6 +351,7 @@
     qs('#lightbox-caption').textContent = photoAlt(photo);
     qs('#lightbox-date').textContent = photo.date ? fill(ui('photoCaptionDate'), { date: formatDate(photo.date) }) : '';
     qs('#lightbox-counter').textContent = fill(ui('lightboxCounter'), { current: index + 1, total: total });
+    announcePhoto();
     // 先把前後兩張抓進快取，切換時才不會等（支援 WebP 的瀏覽器會抓 WebP）
     [index + 1, index - 1].forEach(function (i) {
       var p = DATA.photos[((i % total) + total) % total];
@@ -349,6 +360,14 @@
       if (DATA.site.webp && supportsWebp()) { pre.src = String(p.src).replace(/\.jpe?g$/i, '') + '-full.webp'; }
       else { pre.src = p.src; }
     });
+  }
+
+  // 螢幕閱讀器用的宣告（aria-live）：換照片時唸出「9枚中3枚目：…」，文字來自 data.js
+  function announcePhoto() {
+    var status = qs('#lightbox-status');
+    var photo = DATA.photos[state.photoIndex];
+    if (!status || !photo) { return; }
+    status.textContent = fill(ui('lightboxAnnounce'), { current: state.photoIndex + 1, total: DATA.photos.length, caption: photoAlt(photo) });
   }
 
   var webpSupport = null;
@@ -374,6 +393,7 @@
       lightbox.setAttribute('open', '');
     }
     lightbox.focus();   // 焦點放在 dialog 本身：會唸出標籤，也不會在點按時出現焦點框
+    announcePhoto();    // 開啟前 dialog 還是隱藏的，顯示之後再寫一次宣告區才會被唸出來
   }
 
   function closeLightbox() {

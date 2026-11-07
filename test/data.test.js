@@ -44,7 +44,8 @@ test('除了允許留白的欄位，文字不可以是空字串', () => {
 test('介面文字的 {佔位符} 都在', () => {
   const need = {
     birthdayUntil: ['{age}'], birthdayTodayLead: ['{age}'],
-    lightboxCounter: ['{current}', '{total}'], footerUpdated: ['{date}'], photoCaptionDate: ['{date}'],
+    lightboxCounter: ['{current}', '{total}'], lightboxAnnounce: ['{current}', '{total}', '{caption}'],
+    footerUpdated: ['{date}'], photoCaptionDate: ['{date}'],
   };
   for (const [key, tokens] of Object.entries(need)) {
     for (const lang of ['ja', 'zh']) {
