@@ -1,5 +1,5 @@
 /* =====================================================================
-   app.js — 把 data.js 的內容畫到畫面上、語言切換、生日倒數、相簿燈箱。
+   app.js — 把 data.js 的內容畫到畫面上、語言切換、生日倒數、相簿（活動照片＋視訊回憶）燈箱。
    - 只用 textContent / createElement 寫入資料，不用 innerHTML
    - localStorage 的讀寫都包在 try/catch 裡
    - 不依賴任何第三方程式庫
@@ -37,7 +37,8 @@
 
   var state = {
     lang: 'ja',
-    photoIndex: -1,          // 燈箱目前顯示的照片；-1 表示關閉
+    photoGroup: 0,           // 燈箱目前顯示的照片組（GROUPS 的索引）
+    photoIndex: -1,          // 燈箱目前顯示的照片（組內索引）；-1 表示關閉
     lastFocus: null,         // 開燈箱前的焦點元素，關閉後要還回去
     fallbackOpen: false,     // 瀏覽器不支援 dialog.showModal 時的備援模式
     birthdayPreview: window.location.hash === '#birthday-preview',
@@ -271,15 +272,31 @@
     });
   }
 
-  /* ---------- 相簿（格子只建立一次，切換語言時只更新文字） ---------- */
+  /* ---------- 相簿：兩組照片（活動照片、視訊回憶），各自有格子與日期說明，燈箱在組內循環 ---------- */
+  var callPhotos = DATA.callPhotos || {};
+  var GROUPS = [
+    { grid: '#gallery-grid', photos: DATA.photos || [], date: null, captionKey: 'photoCaptionDate' },
+    { grid: '#gallery-grid-call', photos: callPhotos.items || [], date: callPhotos.date || null, captionKey: 'callPhotoCaptionDate' }
+  ];
+  function photoDate(group, photo) { return photo.date || group.date; }
+  function photoCaption(group, photo) {
+    var date = photoDate(group, photo);
+    return date ? fill(ui(group.captionKey), { date: formatDate(date) }) : '';
+  }
+
+  /* 格子只建立一次，切換語言時只更新文字 */
   function buildGallery() {
-    var grid = qs('#gallery-grid');
+    GROUPS.forEach(function (group, groupIndex) { buildGrid(group, groupIndex); });
+  }
+  function buildGrid(group, groupIndex) {
+    var grid = qs(group.grid);
     if (!grid) { return; }
     clear(grid);
-    DATA.photos.forEach(function (photo, index) {
+    group.photos.forEach(function (photo, index) {
       var li = el('li', 'gallery__item');
       var btn = el('button', 'gallery__btn');
       btn.type = 'button';
+      btn.setAttribute('data-group', String(groupIndex));
       btn.setAttribute('data-index', String(index));
       var frame = el('div', 'gallery__frame');
       var picture = el('picture');
@@ -297,7 +314,7 @@
       frame.appendChild(picture);
       btn.appendChild(frame);
       btn.setAttribute('aria-describedby', 'gallery-hint');
-      btn.addEventListener('click', function () { openLightbox(index, btn); });
+      btn.addEventListener('click', function () { openLightbox(groupIndex, index, btn); });
       li.appendChild(btn);
       var caption = el('p', 'gallery__caption');
       caption.appendChild(el('span', 'gallery__index', pad2(index + 1)));
@@ -311,39 +328,48 @@
   function renderGalleryText() {
     var hint = qs('#gallery-hint');
     if (hint) { hint.textContent = ui('galleryOpen'); }
-    qsa('#gallery-grid .gallery__item').forEach(function (item) {
-      var btn = qs('.gallery__btn', item);
-      var photo = DATA.photos[Number(btn.getAttribute('data-index'))];
-      if (!photo) { return; }
-      var alt = photoAlt(photo);
-      var dateText = photo.date ? fill(ui('photoCaptionDate'), { date: formatDate(photo.date) }) : '';
-      qs('.gallery__img', btn).setAttribute('alt', alt);   // 按鈕的無障礙名稱 = 圖片 alt
-      qs('.gallery__caption-text', item).textContent = alt;
-      qs('.gallery__date', item).textContent = dateText;
+    GROUPS.forEach(function (group) {
+      qsa(group.grid + ' .gallery__item').forEach(function (item) {
+        var btn = qs('.gallery__btn', item);
+        var photo = group.photos[Number(btn.getAttribute('data-index'))];
+        if (!photo) { return; }
+        var alt = photoAlt(photo);
+        qs('.gallery__img', btn).setAttribute('alt', alt);   // 按鈕的無障礙名稱 = 圖片 alt
+        qs('.gallery__caption-text', item).textContent = alt;
+        qs('.gallery__date', item).textContent = photoCaption(group, photo);
+      });
     });
+    // 視訊回憶的小標旁邊顯示日期（整組共用）
+    var callDate = qs('#gallery-call-date');
+    if (callDate) {
+      callDate.textContent = callPhotos.date ? formatDate(callPhotos.date) : '';
+      if (callPhotos.date) { callDate.setAttribute('datetime', callPhotos.date); } else { callDate.removeAttribute('datetime'); }
+    }
   }
 
   /* ---------- 燈箱 ---------- */
   var lightbox = qs('#lightbox');
   var lbImg = qs('#lightbox-img');
 
-  function showPhoto(index) {
-    var total = DATA.photos.length;
+  function showPhoto(groupIndex, index) {
+    var group = GROUPS[groupIndex];
+    var total = group ? group.photos.length : 0;
     if (!total) { return; }
-    index = ((index % total) + total) % total;   // 循環
+    index = ((index % total) + total) % total;   // 在同一組內循環
+    state.photoGroup = groupIndex;
     state.photoIndex = index;
-    var photo = DATA.photos[index];
+    var photo = group.photos[index];
     applyWebpSource(qs('#lightbox-source'), photo, SIZES_LIGHTBOX);
     if (lbImg.getAttribute('src') !== photo.src) { lbImg.setAttribute('src', photo.src); }
     if (photo.width) { lbImg.setAttribute('width', photo.width); }
     if (photo.height) { lbImg.setAttribute('height', photo.height); }
     lbImg.setAttribute('alt', photoAlt(photo));
     qs('#lightbox-caption').textContent = photoAlt(photo);
-    qs('#lightbox-date').textContent = photo.date ? fill(ui('photoCaptionDate'), { date: formatDate(photo.date) }) : '';
+    qs('#lightbox-date').textContent = photoCaption(group, photo);
     qs('#lightbox-counter').textContent = fill(ui('lightboxCounter'), { current: index + 1, total: total });
     // 先把前後兩張抓進快取，切換時才不會等（支援 WebP 的瀏覽器會抓 WebP）
     [index + 1, index - 1].forEach(function (i) {
-      var p = DATA.photos[((i % total) + total) % total];
+      var p = group.photos[((i % total) + total) % total];
       if (!p || p.src === photo.src) { return; }
       var pre = new Image();
       if (DATA.site.webp && supportsWebp()) { pre.src = String(p.src).replace(/\.jpe?g$/i, '') + '-full.webp'; }
@@ -362,10 +388,10 @@
     return webpSupport;
   }
 
-  function openLightbox(index, trigger) {
+  function openLightbox(groupIndex, index, trigger) {
     if (!lightbox) { return; }
     state.lastFocus = trigger || doc.activeElement;
-    showPhoto(index);
+    showPhoto(groupIndex, index);
     doc.body.classList.add('is-locked');
     if (typeof lightbox.showModal === 'function') {
       if (!lightbox.open) { lightbox.showModal(); }
@@ -397,7 +423,7 @@
 
   function stepPhoto(delta) {
     if (state.photoIndex < 0) { return; }
-    showPhoto(state.photoIndex + delta);
+    showPhoto(state.photoGroup, state.photoIndex + delta);
   }
 
   function setupLightbox() {
@@ -487,7 +513,7 @@
     renderBirthdayText();
     renderTimeline();
     renderGalleryText();
-    if (state.photoIndex >= 0) { showPhoto(state.photoIndex); }
+    if (state.photoIndex >= 0) { showPhoto(state.photoGroup, state.photoIndex); }
     renderMessages();
     renderAbout();
     renderFooter();

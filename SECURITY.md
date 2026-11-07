@@ -17,7 +17,7 @@
 | Referrer 政策 | `<meta name="referrer" content="no-referrer">` | 訪客從本站點到任何地方時，不會把本站網址當作來源送出 |
 | 外部連結 | 目前網站沒有外部連結；之後若新增，一律加上 `rel="noopener noreferrer"` | 防止被開啟的頁面操控本站視窗（`window.opener`）並且不送出 referrer |
 | 被 iframe 嵌入時的保護 | `app.js` 檢查 `window.top !== window.self`：被嵌入時先嘗試導回最上層（同來源才會成功），然後**把整頁內容清空，只留下一段說明與「開啟網站」連結**（`target="_top"`） | GitHub Pages 無法設定 `X-Frame-Options`／`frame-ancestors` 標頭，瀏覽器也不允許跨來源 iframe 在沒有使用者互動時導向最上層，所以無法完全阻止被框；但被框的頁面會變成不可用的空殼，點擊劫持（clickjacking）與冒充就沒有內容可利用。訪客點連結即可在最上層開啟真正的網站。 |
-| 照片中繼資料 | `photos/` 裡的照片已去除 EXIF（GPS、拍攝裝置等） | 不洩漏拍攝位置與裝置資訊 |
+| 照片中繼資料 | `photos/` 裡的照片（活動照片與視訊截圖）已去除 EXIF、ICC 等中繼資料（GPS、拍攝裝置等）；新照片用 `scripts/import_photos.py` 處理時也會一併去除 | 不洩漏拍攝位置與裝置資訊 |
 | 相對路徑 | 所有資源都用相對路徑 | 放在 `https://dc9408222000-hub.github.io/ayaka-fansite/` 這種子路徑下也能正常運作，不會意外去抓別的網址 |
 | `.nojekyll` | 根目錄有 `.nojekyll` | 讓 GitHub Pages 直接發布檔案，不經過 Jekyll 處理，避免意外的轉換 |
 

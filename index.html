@@ -156,6 +156,17 @@
         </header>
         <p class="visually-hidden" id="gallery-hint"></p>
         <ul class="gallery" id="gallery-grid"></ul>
+        <!-- 第二組：視訊回憶（data.js 的 callPhotos） -->
+        <div class="gallery-group" id="gallery-call">
+          <header class="gallery-group__head">
+            <div class="gallery-group__row">
+              <h3 class="gallery-group__title" id="gallery-call-title" data-ui="galleryCallTitle"></h3>
+              <time class="gallery-group__date" id="gallery-call-date"></time>
+            </div>
+            <p class="gallery-group__lead" data-ui="galleryCallLead"></p>
+          </header>
+          <ul class="gallery" id="gallery-grid-call" aria-labelledby="gallery-call-title"></ul>
+        </div>
       </div>
     </section>
 

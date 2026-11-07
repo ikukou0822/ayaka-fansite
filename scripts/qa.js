@@ -48,7 +48,7 @@ async function newPage(browser, opts = {}) {
 }
 
 async function settle(page) {
-  await page.waitForFunction(() => document.querySelectorAll('#gallery img').length >= 9, null, { timeout: 15000 });
+  await page.waitForFunction(() => document.querySelectorAll('#gallery img').length >= 18, null, { timeout: 15000 });
   await page.waitForTimeout(400);
 }
 async function loadAllImages(page) {
@@ -108,6 +108,11 @@ async function switchLang(page, lang) {
       ok(`default lang is ja @${width}`, lang0 === 'ja', lang0);
       const over = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, iw: window.innerWidth }));
       ok(`no horizontal overflow @${width} (ja)`, over.sw <= over.iw, JSON.stringify(over));
+      if (width === 375) {
+        // 還沒捲動時，視訊回憶的照片不應該已經載入（lazy loading 生效、不影響第一屏）
+        const callLoadedEarly = await page.evaluate(() => Array.from(document.querySelectorAll('#gallery-grid-call img')).filter(i => i.complete && i.naturalWidth > 0).length);
+        ok('call photos are not loaded before scrolling', callLoadedEarly === 0, String(callLoadedEarly));
+      }
       if ([375, 768, 1280].includes(width)) { await loadAllImages(page); await page.screenshot({ path: path.join(outDir, `ja-${width}.png`), fullPage: true }); }
       const jaText = await collectText(page);
       const jaTitle = await page.title();
@@ -152,6 +157,7 @@ async function switchLang(page, lang) {
       if (width === 375) {
         report.info.images = imgs;
         ok('gallery images are lazy', imgs.filter(i => /ayaka-0[1-9]/.test(i.src || '')).filter(i => i.loading === 'lazy').length >= 9, JSON.stringify(imgs.map(i => i.src + ':' + i.loading)));
+        ok('call photos are lazy', imgs.filter(i => /call-0[1-9]/.test(i.src || '')).filter(i => i.loading === 'lazy').length === 9, JSON.stringify(imgs.filter(i => /call-/.test(i.src || '')).map(i => i.src + ':' + i.loading)));
         // scroll to bottom to trigger lazy load and ensure all images load
         await page.evaluate(async () => { for (let y = 0; y < document.body.scrollHeight; y += 400) { window.scrollTo({ top: y, behavior: 'instant' }); await new Promise(r => setTimeout(r, 60)); } window.scrollTo({ top: 0, behavior: 'instant' }); });
         await page.waitForTimeout(1500);
@@ -192,9 +198,11 @@ async function switchLang(page, lang) {
       const { context, page } = await newPage(browser, { width, height: width < 700 ? 812 : 900, hasTouch: width < 700, isMobile: width < 700 });
       await page.goto(baseUrl, { waitUntil: 'load' });
       await settle(page);
-      const tiles = page.locator('#gallery button');
+      const tiles = page.locator('#gallery-grid button');
       const count = await tiles.count();
       ok(`gallery has 9 tile buttons @${width}`, count === 9, String(count));
+      const callCount = await page.locator('#gallery-grid-call button').count();
+      ok(`call-photo group has 9 tile buttons @${width}`, callCount === 9, String(callCount));
       const third = tiles.nth(2);
       await third.scrollIntoViewIfNeeded();
       await third.focus();
@@ -233,8 +241,37 @@ async function switchLang(page, lang) {
       await page.waitForTimeout(400);
       const closed = await page.evaluate(() => { const d = document.querySelector('dialog'); return d ? !d.open : null; });
       ok(`Escape closes lightbox @${width}`, closed === true, String(closed));
-      const focusBack = await page.evaluate(() => { const tiles = document.querySelectorAll('#gallery button'); return document.activeElement === tiles[2]; });
+      const focusBack = await page.evaluate(() => { const tiles = document.querySelectorAll('#gallery-grid button'); return document.activeElement === tiles[2]; });
       ok(`focus returns to the tile @${width}`, focusBack);
+      // ---- 視訊回憶（第二組）：每張有 alt、燈箱可開、在組內循環、計數 1 / 9、焦點回到原格子 ----
+      {
+        const callAlts = await page.evaluate(() => Array.from(document.querySelectorAll('#gallery-grid-call img')).map(i => i.getAttribute('alt') || ''));
+        ok(`call photos all have alt @${width}`, callAlts.length === 9 && callAlts.every(a => a.trim()), JSON.stringify(callAlts));
+        const callHead = await page.evaluate(() => ({ title: (document.querySelector('#gallery-call-title') || {}).textContent || '', date: (document.querySelector('#gallery-call-date') || {}).textContent || '', dt: (document.querySelector('#gallery-call-date') || {}).getAttribute && document.querySelector('#gallery-call-date').getAttribute('datetime') }));
+        ok(`call group has heading and date @${width}`, callHead.title.trim().length > 0 && /2026/.test(callHead.date) && callHead.dt === '2026-10', JSON.stringify(callHead));
+        const callFirst = page.locator('#gallery-grid-call button').nth(0);
+        await callFirst.scrollIntoViewIfNeeded();
+        await callFirst.focus();
+        await page.keyboard.press('Enter');
+        await page.waitForTimeout(400);
+        const callOpen = await page.evaluate(() => { const d = document.querySelector('dialog'); const i = d && d.querySelector('img'); return { open: d ? d.open : null, src: i ? i.getAttribute('src') : null, alt: i ? i.getAttribute('alt') : null, counter: (document.querySelector('#lightbox-counter') || {}).textContent || '', date: (document.querySelector('#lightbox-date') || {}).textContent || '' }; });
+        ok(`lightbox opens call photo 1 @${width}`, callOpen.open === true && callOpen.src === 'photos/call-01.jpg', JSON.stringify(callOpen));
+        ok(`call lightbox has alt, counter 1 / 9 and date @${width}`, !!(callOpen.alt && callOpen.alt.trim()) && /^1 \/ 9$/.test(callOpen.counter.trim()) && /2026/.test(callOpen.date), JSON.stringify(callOpen));
+        await page.screenshot({ path: path.join(outDir, `lightbox-call-${width}.png`), fullPage: false });
+        await page.keyboard.press('ArrowLeft');
+        await page.waitForTimeout(300);
+        const callWrap = await page.evaluate(() => { const i = document.querySelector('dialog img'); return i ? i.getAttribute('src') : null; });
+        ok(`ArrowLeft from call photo 1 wraps to call photo 9 (stays in group) @${width}`, callWrap === 'photos/call-09.jpg', String(callWrap));
+        await page.keyboard.press('ArrowRight');
+        await page.keyboard.press('ArrowRight');
+        await page.waitForTimeout(300);
+        const callNext = await page.evaluate(() => { const i = document.querySelector('dialog img'); return i ? i.getAttribute('src') : null; });
+        ok(`ArrowRight twice reaches call photo 2 @${width}`, callNext === 'photos/call-02.jpg', String(callNext));
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(400);
+        const callClosed = await page.evaluate(() => { const d = document.querySelector('dialog'); const tiles = document.querySelectorAll('#gallery-grid-call button'); return { closed: d ? !d.open : null, focusBack: document.activeElement === tiles[0] }; });
+        ok(`Escape closes call lightbox and focus returns @${width}`, callClosed.closed === true && callClosed.focusBack, JSON.stringify(callClosed));
+      }
       const unlocked = await page.evaluate(() => getComputedStyle(document.body).overflow !== 'hidden');
       ok(`body scroll unlocked after close @${width}`, unlocked);
       // close button via click

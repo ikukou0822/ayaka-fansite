@@ -1,5 +1,5 @@
 // data.js 的資料檢查：node --test
-// 確認每段文字都有日文與中文、照片檔案存在、日期格式正確、{佔位符} 沒有漏掉。
+// 確認每段文字都有日文與中文、照片（活動照片與視訊回憶）檔案存在且尺寸正確、日期格式正確、{佔位符} 沒有漏掉。
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -55,21 +55,81 @@ test('介面文字的 {佔位符} 都在', () => {
   }
 });
 
-test('相簿與主視覺的照片檔案都存在，且有 alt 與尺寸', () => {
-  const photos = [DATA.hero.photo, ...DATA.photos];
-  for (const photo of photos) {
+/** 讀 JPEG 的 SOF 標頭取得實際尺寸（不需要任何套件） */
+function jpegSize(file) {
+  const buf = fs.readFileSync(file);
+  assert.equal(buf.readUInt16BE(0), 0xffd8, `${file} 不是 JPEG`);
+  let pos = 2;
+  while (pos < buf.length) {
+    assert.equal(buf[pos], 0xff, `${file} JPEG 標頭損壞`);
+    const marker = buf[pos + 1];
+    if (marker === 0xd8 || (marker >= 0xd0 && marker <= 0xd7) || marker === 0x01) { pos += 2; continue; }
+    const len = buf.readUInt16BE(pos + 2);
+    if (marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc) {
+      return { height: buf.readUInt16BE(pos + 5), width: buf.readUInt16BE(pos + 7) };
+    }
+    pos += 2 + len;
+  }
+  assert.fail(`${file} 找不到 SOF 標頭`);
+}
+
+/** 所有相簿照片：主視覺、活動照片、視訊回憶（每張都附上所屬組別的共用日期） */
+function allPhotos() {
+  const call = DATA.callPhotos || { items: [] };
+  return [
+    { photo: DATA.hero.photo, group: 'hero' },
+    ...DATA.photos.map((photo) => ({ photo, group: 'photos' })),
+    ...call.items.map((photo) => ({ photo: { date: call.date, ...photo }, group: 'callPhotos' })),
+  ];
+}
+
+test('相簿與主視覺的照片檔案都存在，且有 alt 與尺寸（尺寸和 JPEG 實際尺寸一致）', () => {
+  for (const { photo, group } of allPhotos()) {
     const file = path.join(ROOT, photo.src);
     assert.ok(fs.existsSync(file), `找不到 ${photo.src}`);
     assert.ok(photo.alt_ja && photo.alt_zh, `${photo.src} 缺少 alt_ja / alt_zh`);
     assert.equal(typeof photo.width, 'number');
     assert.equal(typeof photo.height, 'number');
-    assert.match(photo.date || '', /^\d{4}-\d{2}-\d{2}$/);
+    assert.deepEqual(jpegSize(file), { width: photo.width, height: photo.height }, `${photo.src} 的尺寸和檔案不符`);
+    assert.ok(Math.abs(photo.width / photo.height - 0.8) < 0.002, `${photo.src} 不是 4:5 直式`);
+    if (group === 'callPhotos') {
+      assert.match(photo.date || '', /^\d{4}-\d{2}(-\d{2})?$/, `視訊回憶的日期要是 YYYY-MM 或 YYYY-MM-DD（${photo.src}）`);
+    } else {
+      assert.match(photo.date || '', /^\d{4}-\d{2}-\d{2}$/);
+    }
   }
   assert.equal(DATA.photos.length, 9);
+  assert.equal(DATA.callPhotos.items.length, 9, '視訊回憶照片應有 9 張');
+  assert.ok(DATA.callPhotos.items.every((p) => /^photos\/call-\d{2}\.jpg$/.test(p.src)), '視訊回憶檔名應為 photos/call-NN.jpg');
+});
+
+test('photos/call-photos.json 與 data.js 的 callPhotos 一致', () => {
+  const json = JSON.parse(fs.readFileSync(path.join(ROOT, 'photos', 'call-photos.json'), 'utf8'));
+  assert.equal(json.length, DATA.callPhotos.items.length);
+  json.forEach((entry, i) => {
+    const item = DATA.callPhotos.items[i];
+    assert.deepEqual(
+      { src: entry.src, alt_ja: entry.alt_ja, alt_zh: entry.alt_zh, width: entry.width, height: entry.height },
+      { src: item.src, alt_ja: item.alt_ja, alt_zh: item.alt_zh, width: item.width, height: item.height },
+      `call-photos.json 第 ${i + 1} 筆和 data.js 不同`
+    );
+    assert.equal(entry.date, item.date || DATA.callPhotos.date, `call-photos.json 第 ${i + 1} 筆的日期和 data.js 不同`);
+  });
+});
+
+test('相簿第二組的介面文字都在', () => {
+  for (const key of ['galleryCallTitle', 'galleryCallLead', 'callPhotoCaptionDate']) {
+    assert.ok(DATA.ui[key] && DATA.ui[key].ja && DATA.ui[key].zh, `ui.${key} 缺少日文或中文`);
+  }
+  for (const lang of ['ja', 'zh']) {
+    assert.ok(DATA.ui.callPhotoCaptionDate[lang].includes('{date}'), `ui.callPhotoCaptionDate.${lang} 缺少 {date}`);
+    assert.ok(/ビデオ通話|視訊/.test(DATA.footer.photoNotice[lang]), `footer.photoNotice.${lang} 應提到視訊截圖`);
+    assert.ok(DATA.about.paragraphs.some((p) => /ビデオ通話|視訊/.test(p[lang])), `about 應提到視訊截圖（${lang}）`);
+  }
 });
 
 test('site.webp 為 true 時，每張照片的 WebP 版本都存在（scripts/make_images.py）', { skip: !DATA.site.webp }, () => {
-  const photos = [DATA.hero.photo, ...DATA.photos];
+  const photos = allPhotos().map((x) => x.photo);
   for (const photo of photos) {
     const stem = photo.src.replace(/\.jpe?g$/i, '');
     for (const suffix of ['-480.webp', '-800.webp', '-full.webp']) {

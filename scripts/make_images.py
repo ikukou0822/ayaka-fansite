@@ -2,8 +2,9 @@
 """為相簿照片產生 WebP 版本與分享用的 og.jpg。
 
 用法（在 repo 根目錄執行）：
-    python3 scripts/make_images.py            # 處理 photos/ 裡所有 ayaka-*.jpg
-    python3 scripts/make_images.py --out DIR  # 把結果輸出到別的資料夾（測試用）
+    python3 scripts/make_images.py                      # 處理 photos/ 裡所有 *.jpg（ayaka-*、call-*）
+    python3 scripts/make_images.py --match 'call-*.jpg' # 只處理符合樣式的檔案（例如只有新加的視訊回憶照片）
+    python3 scripts/make_images.py --out DIR            # 把結果輸出到別的資料夾（測試用）
 
 每張 photos/xxx.jpg 會產生：
     photos/xxx-480.webp   寬 480px（手機）
@@ -74,18 +75,21 @@ def make_og(src: pathlib.Path, out_dir: pathlib.Path) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--out", type=pathlib.Path, default=PHOTOS, help="輸出資料夾（預設 photos/）")
+    parser.add_argument("--match", default="*.jpg", help="只處理符合這個樣式的檔案（預設 *.jpg；指定時不重做 og.jpg）")
     args = parser.parse_args()
     out_dir = args.out.resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    sources = sorted(p for p in PHOTOS.glob("*.jpg") if p.name != "og.jpg")
+    sources = sorted(p for p in PHOTOS.glob(args.match) if p.name != "og.jpg")
     if not sources:
-        sys.exit("photos/ 裡找不到 jpg 檔")
+        sys.exit(f"photos/ 裡找不到符合 {args.match} 的 jpg 檔")
     print("產生 WebP：")
     for src in sources:
         make_webp(src, out_dir)
     og_src = PHOTOS / OG_SOURCE
-    if og_src.exists():
+    if args.match != "*.jpg":
+        print("（只處理指定檔案，og.jpg 不重做）")
+    elif og_src.exists():
         print("產生分享圖：")
         make_og(og_src, out_dir)
     else:
