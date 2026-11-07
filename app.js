@@ -10,7 +10,15 @@
   var DATA = window.SITE_DATA;
   var Countdown = window.AyakaCountdown;
   var Share = window.AyakaShare;   // share.js；沒載到時只會藏起分享按鈕，其他功能照常
-  if (!DATA || !Countdown) { return; }
+  if (!DATA || !Countdown) {
+    // data.js／countdown.js 載入失敗或有語法錯誤（例如少一個逗號）：改套 nojs.css，
+    // 只留下字標與主視覺照片，不顯示空膠囊、「0 0 0 0」倒數格和空區塊。改完 data.js 請先跑 node --test。
+    var fallback = document.createElement('link');
+    fallback.rel = 'stylesheet';
+    fallback.href = 'nojs.css';
+    document.head.appendChild(fallback);
+    return;
+  }
 
   // 被別的網站用 iframe 嵌入時：GitHub Pages 無法設定 X-Frame-Options／frame-ancestors，
   // 而且瀏覽器不允許跨來源 iframe 在沒有使用者互動時導向最上層，所以改成「把內容藏起來，只留一個開啟連結」。
@@ -124,10 +132,10 @@
   }
 
   /* ---------- 圖片：WebP 版本（<picture>）----------
-     photos/ayaka-01.jpg → photos/ayaka-01-480.webp / -800.webp / -full.webp（scripts/make_images.py 產生） */
+     photos/ayaka-01.jpg → photos/ayaka-01-480.webp / -800.webp / -1024.webp / -full.webp（scripts/make_images.py 產生） */
   function webpSrcset(photo) {
     var stem = String(photo.src).replace(/\.jpe?g$/i, '');
-    var parts = [stem + '-480.webp 480w', stem + '-800.webp 800w'];
+    var parts = [stem + '-480.webp 480w', stem + '-800.webp 800w', stem + '-1024.webp 1024w'];
     if (photo.width) { parts.push(stem + '-full.webp ' + photo.width + 'w'); }
     return parts.join(', ');
   }
@@ -143,7 +151,11 @@
     }
   }
   var SIZES_GALLERY = '(min-width: 1100px) 340px, (min-width: 700px) 30vw, 46vw';
-  var SIZES_HERO = '(min-width: 720px) 460px, 92vw';
+  var SIZES_GALLERY_FIRST = '(min-width: 1100px) 340px, (min-width: 700px) 30vw, 92vw';   // 699px 以下第一格是整寬
+  // 主視覺：欄寬在 720～1099px 是 360～420px（.hero__inner 的 minmax(360px, 0.9fr)），橫向手機兩欄約 41vw，
+  // 直向手機是 92vw 但照片框最高 50vh（4:5 → 寬度最多 40vh）；index.html 的 <source sizes> 也是同一句，
+  // 調整 .hero__inner 欄寬或 .hero__frame 的高度上限時兩處要一起改
+  var SIZES_HERO = '(min-width: 1100px) 460px, (min-width: 720px) clamp(360px, 41vw, 460px), (min-width: 560px) and (orientation: landscape) 41vw, min(92vw, 40vh)';
   // 燈箱：4:5 的直式照片扣掉上下列後約佔 85vh 高，寬度約 68vh；桌機不必抓 full 尺寸
   var SIZES_LIGHTBOX = 'min(100vw, 68vh)';
 
@@ -287,7 +299,7 @@
       var frame = el('div', 'gallery__frame');
       var picture = el('picture');
       var source = el('source');
-      applyWebpSource(source, photo, SIZES_GALLERY);
+      applyWebpSource(source, photo, index === 0 ? SIZES_GALLERY_FIRST : SIZES_GALLERY);
       var img = el('img', 'gallery__img');
       img.setAttribute('src', photo.src);
       img.setAttribute('loading', 'lazy');

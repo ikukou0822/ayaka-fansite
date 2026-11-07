@@ -8,6 +8,7 @@
 每張 photos/xxx.jpg 會產生：
     photos/xxx-480.webp   寬 480px（手機）
     photos/xxx-800.webp   寬 800px（平板／桌機格子）
+    photos/xxx-1024.webp  寬 1024px（DPR 3 手機與 DPR 2 桌機的主視覺）
     photos/xxx-full.webp  原始尺寸（放大檢視）
 另外從 photos/ayaka-07.jpg 裁出 photos/og.jpg（1200×630，分享預覽圖）。
 
@@ -25,7 +26,7 @@ except ImportError:  # pragma: no cover
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 PHOTOS = ROOT / "photos"
-SIZES = (480, 800)
+SIZES = (480, 800, 1024)
 WEBP_QUALITY = 82
 OG_SOURCE = "ayaka-07.jpg"
 OG_SIZE = (1200, 630)

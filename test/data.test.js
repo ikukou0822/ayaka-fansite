@@ -73,7 +73,7 @@ test('site.webp 為 true 時，每張照片的 WebP 版本都存在（scripts/ma
   const photos = [DATA.hero.photo, ...DATA.photos];
   for (const photo of photos) {
     const stem = photo.src.replace(/\.jpe?g$/i, '');
-    for (const suffix of ['-480.webp', '-800.webp', '-full.webp']) {
+    for (const suffix of ['-480.webp', '-800.webp', '-1024.webp', '-full.webp']) {
       assert.ok(fs.existsSync(path.join(ROOT, stem + suffix)), `找不到 ${stem}${suffix}`);
     }
   }

@@ -57,7 +57,8 @@ NiziU 成員 AYAKA（彩花）的非官方粉絲網站。純 HTML / CSS / JavaSc
 ## 怎麼改內容（全部在 `data.js`）
 
 `data.js` 裡每一段文字都有 `ja`（日文）和 `zh`（繁體中文）兩個版本。改完存檔、commit、push 到 `main` 就會更新。
-改完可以執行 `node --test` 確認沒有漏掉某一種語言。
+改完請先執行 `node --test`：少一個逗號或引號沒關好時，第一個測試就會失敗並指出行號；沒有漏掉某一種語言也會一起檢查。
+（萬一壞掉的 `data.js` 被 push 出去，網站只會顯示字標與主視覺照片，不會出現空白的骨架，但其他內容都看不到。）
 
 ### 應援標語、首頁文字
 
@@ -127,7 +128,7 @@ slogan: {
    python3 scripts/make_images.py
    ```
 
-   這會為每張 `photos/*.jpg` 產生 `-480.webp`、`-800.webp`、`-full.webp`，並從 `photos/ayaka-07.jpg` 裁出 `photos/og.jpg`（分享預覽圖，想換來源請改腳本裡的 `OG_SOURCE`）。
+   這會為每張 `photos/*.jpg` 產生 `-480.webp`、`-800.webp`、`-1024.webp`、`-full.webp`，並從 `photos/ayaka-07.jpg` 裁出 `photos/og.jpg`（分享預覽圖，想換來源請改腳本裡的 `OG_SOURCE`）。
    暫時不想處理 WebP 的話，把 `data.js` 的 `site.webp` 改成 `false` 即可。
 4. `photos/photos.json` 是照片說明的原始檔，建議一起更新，方便之後對照。
 5. 執行 `node --test`，會檢查照片檔案與 WebP 版本是否都存在。
@@ -137,10 +138,10 @@ slogan: {
 直接用瀏覽器打開 `index.html` 就能看。想和 GitHub Pages 一樣用網址瀏覽：
 
 ```bash
-python3 -m http.server 8000
+python3 -m http.server 8000 --bind 127.0.0.1
 ```
 
-然後打開 <http://localhost:8000/>。
+然後打開 <http://127.0.0.1:8000/>。`--bind 127.0.0.1` 讓預覽只有自己的電腦看得到；少了它，同一個 Wi-Fi 上的其他人也能瀏覽整個資料夾（包括 `.git/`）。
 
 ## 測試與品質檢查
 
@@ -155,7 +156,7 @@ node --test
 ```bash
 npm install
 npx playwright install chromium
-python3 -m http.server 8000      # 另開一個終端機
+python3 -m http.server 8000 --bind 127.0.0.1      # 另開一個終端機
 node scripts/qa.js http://127.0.0.1:8000/ qa-output
 ```
 
@@ -230,7 +231,7 @@ npm audit
 ## 待確認事項
 
 - **GitHub Pages 已開啟**（2026-11-04 06:19，來源 `main` 分支根目錄，github.io 網域強制 HTTPS），網址：https://dc9408222000-hub.github.io/ayaka-fansite/ ，07:59 的部署狀態為成功。
-- **初始 commit 的作者信箱**（安全稽核 S-01）：`fa239a6` 的 author email 是個人 Gmail。改寫歷史需要 force push，開發時沒有動；是否要清除由網站主人決定（可先到 GitHub → Settings → Emails 開啟信箱隱私設定）。
+- **初始 commit 的作者信箱設定**（安全稽核 S-01）：改寫歷史需要 force push，開發時沒有動；是否整理由網站主人決定（可先到 GitHub → Settings → Emails 開啟信箱隱私設定；細節在 `review-security` 分支的報告）。
 - **分享預覽與 404 頁的網址**：`index.html` 的 `og:url`／`og:image`／`canonical` 與 `404.html` 裡的 `/ayaka-fansite/` 路徑都寫死為 GitHub Pages 的網址；如果之後改用自訂網域，請一併修改。
 - **應援標語與留言**：目前都是範例文字，請換成自己的話（`data.js` 的 `hero.slogan` 與 `messages`）。
 - **個人資料的「待補」欄位**：只放了確認過的資訊，其餘留待補充（年表「虹プロジェクト 最終順位8位」的年份依網站主人指示填 2020；設計審查 D-32 建議若無法確認就改回 null）。

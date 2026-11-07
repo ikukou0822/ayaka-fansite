@@ -1,6 +1,6 @@
 // 品質檢查（headless Chromium + Playwright）：截圖、跑版、橫向捲動、CSP、語言切換、燈箱、倒數、深色模式、減少動態、無障礙（axe-core）。
 // 先安裝：npm install（會裝 playwright 與 axe-core），再 npx playwright install chromium
-// 然後在另一個終端機執行 python3 -m http.server 8000，接著：
+// 然後在另一個終端機執行 python3 -m http.server 8000 --bind 127.0.0.1（只讓自己的電腦看得到），接著：
 //   node scripts/qa.js http://127.0.0.1:8000/ qa-output
 // 截圖與 report.json 會放在 qa-output/（已在 .gitignore 裡）。
 'use strict';
@@ -222,6 +222,7 @@ async function switchLang(page, lang) {
         ok('no style attributes', sec.styleAttrs === 0, String(sec.styleAttrs));
         ok('no on* attributes', sec.onAttrs === 0, String(sec.onAttrs));
         ok('CSP meta present', !!sec.csp, sec.csp);
+        ok('CSP enforces Trusted Types and forbids creating policies', /require-trusted-types-for 'script'/.test(sec.csp || '') && /trusted-types 'none'/.test(sec.csp || ''), sec.csp);
         ok('referrer meta no-referrer', sec.referrer === 'no-referrer', sec.referrer);
         ok('no external resources', sec.external.length === 0, JSON.stringify(sec.external));
       }
@@ -376,6 +377,39 @@ async function switchLang(page, lang) {
       await page.waitForTimeout(300);
       const closed = await page.evaluate(() => !document.querySelector('dialog').open);
       ok(`lightbox keys still work in a short viewport @${w}x${h}`, next === 'photos/ayaka-05.jpg' && closed, JSON.stringify({ next, closed }));
+      await context.close();
+    }
+
+    // ---------- image sizes on high-DPR devices (P-01, P-02, P-04) and broken data.js fallback (P-03) ----------
+    for (const [w, h, dpr, want] of [[375, 812, 2, { g0: /-800\.webp$/, hero: /-800\.webp$/ }], [375, 812, 3, { g0: /-full\.webp$/, hero: /-1024\.webp$/ }], [768, 1024, 2, { hero: /-800\.webp$/ }], [667, 375, 2, { hero: /-800\.webp$/ }], [1280, 900, 2, { hero: /-1024\.webp$/ }]]) {
+      const context = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: dpr, locale: 'ja-JP' });
+      const page = await context.newPage();
+      await page.goto(baseUrl, { waitUntil: 'load' });
+      await settle(page);
+      await loadAllImages(page);
+      const pick = await page.evaluate(() => { const f = (i) => ({ cur: (i.currentSrc || '').split('/').pop(), css: Math.round(i.getBoundingClientRect().width) }); return { hero: f(document.querySelector('#hero-img')), g0: f(document.querySelector('#gallery img')) }; });
+      for (const k of Object.keys(want)) ok(`${k === 'hero' ? 'hero' : 'first gallery'} image picks a fitting WebP @${w}x${h} dpr${dpr}`, want[k].test(pick[k].cur) && pick[k].css * dpr <= Number((pick[k].cur.match(/-(\d+)\.webp$/) || [0, 9999])[1]) * 1.05 + (pick[k].cur.includes('-full') ? 9999 : 0), JSON.stringify(pick[k]));
+      await context.close();
+    }
+    {
+      // Trusted Types 真的在執行期擋下字串型 innerHTML 與 createPolicy（這個探針本身會製造 CSP 違規與 console 錯誤，所以獨立開一個 context）
+      const { context, page } = await newPage(browser, { width: 375 });
+      await page.goto(baseUrl, { waitUntil: 'load' });
+      await settle(page);
+      const tt = await page.evaluate(() => { const out = {}; try { const d = document.createElement('div'); d.innerHTML = '<b>x</b>'; out.innerHTML = 'allowed'; } catch (e) { out.innerHTML = 'blocked'; } try { window.trustedTypes.createPolicy('default', { createHTML: s => s }); out.policy = 'allowed'; } catch (e) { out.policy = 'blocked'; } return out; });
+      ok('string innerHTML and trustedTypes.createPolicy are both blocked by the CSP', tt.innerHTML === 'blocked' && tt.policy === 'blocked', JSON.stringify(tt));
+      await context.close();
+    }
+    {
+      const { context, page } = await newPage(browser, { width: 375 });
+      await page.route('**/data.js', r => r.fulfill({ status: 200, contentType: 'application/javascript', body: 'window.SITE_DATA = { broken: ,' }));
+      await page.goto(baseUrl, { waitUntil: 'load' });
+      await page.waitForTimeout(800);
+      const r = await page.evaluate(() => { const vis = (sel) => Array.from(document.querySelectorAll(sel)).some(el => { const b = el.getBoundingClientRect(); return b.width > 0 && b.height > 0; }); return { nojs: !!document.querySelector('link[href="nojs.css"]'), pills: vis('.site-nav__list a'), tiles: vis('.countdown__tile'), sections: vis('.section'), heroW: Math.round(document.querySelector('.hero__img').getBoundingClientRect().width) }; });
+      ok('broken data.js falls back to the no-JS layout (no empty skeleton)', r.nojs && !r.pills && !r.tiles && !r.sections && r.heroW >= 200, JSON.stringify(r));
+      const csp = await page.evaluate(() => window.__cspViolations);
+      ok('broken data.js fallback causes no CSP violations', csp.length === 0, JSON.stringify(csp));
+      await page.screenshot({ path: path.join(outDir, 'broken-data-375.png'), fullPage: true });
       await context.close();
     }
 
