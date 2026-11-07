@@ -142,7 +142,8 @@
   }
   var SIZES_GALLERY = '(min-width: 1100px) 340px, (min-width: 700px) 30vw, 46vw';
   var SIZES_HERO = '(min-width: 720px) 460px, 92vw';
-  var SIZES_LIGHTBOX = '100vw';
+  // 燈箱：4:5 的直式照片扣掉上下列後約佔 85vh 高，寬度約 68vh；桌機不必抓 full 尺寸
+  var SIZES_LIGHTBOX = 'min(100vw, 68vh)';
 
   /* ---------- 首頁主視覺 ---------- */
   function renderHero() {
@@ -352,13 +353,18 @@
     qs('#lightbox-date').textContent = photo.date ? fill(ui('photoCaptionDate'), { date: formatDate(photo.date) }) : '';
     qs('#lightbox-counter').textContent = fill(ui('lightboxCounter'), { current: index + 1, total: total });
     announcePhoto();
-    // 先把前後兩張抓進快取，切換時才不會等（支援 WebP 的瀏覽器會抓 WebP）
+    // 先把前後兩張抓進快取，切換時才不會等：用和 <picture> 相同的 srcset／sizes，
+    // 瀏覽器會挑和燈箱一樣的尺寸（支援 WebP 的瀏覽器抓 WebP）
     [index + 1, index - 1].forEach(function (i) {
       var p = DATA.photos[((i % total) + total) % total];
       if (!p || p.src === photo.src) { return; }
       var pre = new Image();
-      if (DATA.site.webp && supportsWebp()) { pre.src = String(p.src).replace(/\.jpe?g$/i, '') + '-full.webp'; }
-      else { pre.src = p.src; }
+      if (DATA.site.webp && supportsWebp()) {
+        pre.sizes = SIZES_LIGHTBOX;
+        pre.srcset = webpSrcset(p);
+      } else {
+        pre.src = p.src;
+      }
     });
   }
 

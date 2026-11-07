@@ -1,7 +1,7 @@
 {
   "name": "AYAKA（彩花）非公式応援サイト",
   "short_name": "AYAKA",
-  "description": "NiziUのAYAKA（彩花）を応援する非公式ファンサイト",
+  "description": "NiziUのAYAKA（彩花）を応援する非公式応援サイト",
   "lang": "ja",
   "start_url": "./",
   "scope": "./",

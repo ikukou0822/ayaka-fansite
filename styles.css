@@ -196,6 +196,20 @@ button, a { -webkit-tap-highlight-color: transparent; }
   text-align: center;
 }
 
+/* ---------- 文字填入前的預留空間 ----------
+   文字由 app.js 從 data.js 填入，第一次繪製時這些元素還是空的；先預留接近最終的寬高，
+   版面就不會在文字出現時跳動（CLS）。填入文字後 :empty 不再成立，最終畫面完全不受影響。 */
+.brand__name:empty { min-width: 4.2em; }
+.brand__sub:empty { min-width: 8em; }
+.lang-switch__btn:empty { min-width: 5.5em; }
+.site-nav__list a:empty { min-width: 7em; }
+.hero__eyebrow:empty { min-width: 14em; min-height: 1.8em; }
+.hero__name-latin:empty { min-height: 0.95em; }
+.hero__name-kanji:empty { min-height: 1em; }
+.hero__slogan:empty { min-height: 1.9em; }
+.section__title:empty { min-height: 1.3em; }
+.section__lead:empty { min-height: 1.8em; }
+
 /* ---------- 頁首 ---------- */
 .site-header {
   position: sticky;

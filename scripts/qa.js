@@ -260,6 +260,10 @@ async function switchLang(page, lang) {
       const counter0 = await page.evaluate(() => (document.querySelector('dialog') || {}).textContent || '');
       const img0 = await page.evaluate(() => { const i = document.querySelector('dialog img'); return i ? i.getAttribute('src') : null; });
       ok(`lightbox shows 3rd photo @${width}`, img0 === 'photos/ayaka-03.jpg', String(img0));
+      await page.waitForTimeout(500);
+      const lbSrc = await page.evaluate(() => { const i = document.querySelector('dialog img'); const r = i.getBoundingClientRect(); return { cur: (i.currentSrc || '').split('/').pop(), w: Math.round(r.width), dpr: window.devicePixelRatio }; });
+      report.info[`lightboxSrc${width}`] = lbSrc;
+      if (lbSrc.dpr === 1 && width === 1280) ok('lightbox picks the 800px WebP on a 1280x900 desktop, not -full', /-800\.webp$/.test(lbSrc.cur), JSON.stringify(lbSrc));
       await page.screenshot({ path: path.join(outDir, `lightbox-${width}.png`), fullPage: false });
       const status0 = await page.evaluate(() => (document.querySelector('dialog [aria-live]') || {}).textContent || '');
       await page.keyboard.press('ArrowRight');
