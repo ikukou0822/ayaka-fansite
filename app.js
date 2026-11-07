@@ -80,7 +80,7 @@
   function photoAlt(photo) { return state.lang === 'zh' ? (photo.alt_zh || photo.alt_ja || '') : (photo.alt_ja || photo.alt_zh || ''); }
   function pad2(n) { return n < 10 ? '0' + n : String(n); }
 
-  /** 'YYYY-MM-DD' / 'YYYY-MM' / 'YYYY' → 日文或中文日期；null → 「日付：準備中／日期：待補」 */
+  /** 'YYYY-MM-DD' / 'YYYY-MM' / 'YYYY' → 日文或中文日期；null → 「日付：確認中／日期：待補」 */
   function formatDate(str) {
     if (!str) { return ui('dateUnknown'); }
     var parts = String(str).split('-').map(Number);
