@@ -300,6 +300,11 @@ async function switchLang(page, lang) {
       ok(`lightbox opens with Enter @${width}`, open === true, String(open));
       const focusInside = await page.evaluate(() => { const d = document.querySelector('dialog'); return !!(d && d.contains(document.activeElement)); });
       ok(`focus moves into dialog @${width}`, focusInside);
+      // 剛開啟（焦點在 dialog 本身）就按 Shift+Tab：留在燈箱裡、落在最後一顆按鈕（A2-04）
+      await page.keyboard.press('Shift+Tab');
+      await page.waitForTimeout(100);
+      const backFocus = await page.evaluate(() => document.activeElement.id);
+      ok(`Shift+Tab right after opening stays in the dialog on the last button @${width}`, backFocus === 'lightbox-next', backFocus);
       const counter0 = await page.evaluate(() => (document.querySelector('dialog') || {}).textContent || '');
       const img0 = await page.evaluate(() => { const i = document.querySelector('dialog img'); return i ? i.getAttribute('src') : null; });
       ok(`lightbox shows 3rd photo @${width}`, img0 === 'photos/ayaka-03.jpg', String(img0));
@@ -376,7 +381,8 @@ async function switchLang(page, lang) {
         ok(`call lightbox live region announces the call photo @${width}`, callStatus0 !== callStatus1.text && /9/.test(callStatus1.text) && callStatus1.alt.length > 0 && callStatus1.text.includes(callStatus1.alt), `${callStatus0} -> ${JSON.stringify(callStatus1)}`);
         // 第二組的 <source sizes> 要和第一組（R-13／P-01 的新值）相同
         const sizes = await page.evaluate(() => [1, 2].map(n => (document.querySelector(`#gallery-grid .gallery__item:nth-child(${n}) source`) || {}).getAttribute('sizes')).concat([1, 2].map(n => (document.querySelector(`#gallery-grid-call .gallery__item:nth-child(${n}) source`) || {}).getAttribute('sizes'))));
-        ok(`call-photo group uses the same sizes as the first group @${width}`, sizes[0] === sizes[2] && sizes[1] === sizes[3] && /340px/.test(sizes[1] || ''), JSON.stringify(sizes));
+        // 第一組只有第一張是整寬（92vw）；第二組第一張不全寬，所以兩張都用一般的 sizes（P2-02）
+        ok(`call-photo group uses the regular sizes for its first tile too @${width}`, sizes[0] !== sizes[1] && /92vw/.test(sizes[0] || '') && sizes[2] === sizes[1] && sizes[3] === sizes[1] && /340px/.test(sizes[1] || ''), JSON.stringify(sizes));
         await page.keyboard.press('ArrowRight');
         await page.keyboard.press('ArrowRight');
         await page.waitForTimeout(300);
@@ -429,8 +435,15 @@ async function switchLang(page, lang) {
       await settle(page);
       await page.locator('#gallery button').nth(3).click();
       await page.waitForTimeout(600);
-      const lb = await page.evaluate(() => { const i = document.querySelector('dialog img').getBoundingClientRect(); const d = document.querySelector('dialog'); return { imgW: Math.round(i.width), imgH: Math.round(i.height), scrollable: d.scrollHeight > d.clientHeight, counterHidden: document.getElementById('lightbox-counter').getAttribute('aria-hidden') === 'true', hintHidden: document.getElementById('gallery-hint').hidden }; });
-      ok(`lightbox photo keeps a usable size in a short viewport @${w}x${h}`, lb.imgW >= Math.min(w, h) * 0.8 && lb.scrollable, JSON.stringify(lb));
+      const lb = await page.evaluate(() => {
+        const i = document.querySelector('dialog img').getBoundingClientRect(); const d = document.querySelector('dialog');
+        const btns = Array.from(document.querySelectorAll('.lightbox__btn')).map(b => b.getBoundingClientRect());
+        const overlap = btns.some(b => b.left < i.right && b.right > i.left && b.top < i.bottom && b.bottom > i.top);
+        return { imgW: Math.round(i.width), imgH: Math.round(i.height), imgTop: Math.round(i.top), imgBottom: Math.round(i.bottom), vh: window.innerHeight, overlap, scrollable: d.scrollHeight > d.clientHeight, counterHidden: document.getElementById('lightbox-counter').getAttribute('aria-hidden') === 'true', hintHidden: document.getElementById('gallery-hint').hidden };
+      });
+      // 橫向手機（D2-02）：整張照片可見、不被按鈕遮住、不用捲動；400% 縮放的 320×256（A-04）：照片不縮成縮圖、可捲動
+      if (w === 568) ok(`landscape lightbox shows the whole photo with the buttons beside it @${w}x${h}`, lb.imgTop >= 0 && lb.imgBottom <= lb.vh && lb.imgH >= lb.vh * 0.7 && !lb.overlap && !lb.scrollable, JSON.stringify(lb));
+      else ok(`lightbox photo keeps a usable size in a short viewport @${w}x${h}`, lb.imgW >= Math.min(w, h) * 0.8 && lb.scrollable, JSON.stringify(lb));
       if (w === 568) ok('lightbox counter and gallery hint are not read twice (aria-hidden / hidden)', lb.counterHidden && lb.hintHidden, JSON.stringify(lb));
       await page.screenshot({ path: path.join(outDir, `lightbox-${w}x${h}.png`) });
       await page.keyboard.press('ArrowRight');
@@ -667,15 +680,60 @@ async function switchLang(page, lang) {
     // ---------- header & nav: sticky part, keyboard focus, text spacing (V-01/A-01, A-02, A-03, A-05, V-02) ----------
     {
       // 手機：捲動後只有導覽列固定在上方（品牌列捲走），膠囊的焦點框不被切掉
-      for (const [w, h] of [[375, 667], [320, 256]]) {
+      for (const [w, h] of [[375, 667], [320, 256], [280, 653]]) {
         const { context, page } = await newPage(browser, { width: w, height: h, hasTouch: true, isMobile: true });
         await page.goto(baseUrl, { waitUntil: 'load' });
         await settle(page);
+        if (w === 280) {
+          // 折疊機外螢幕（D2-01）：語言鈕和品牌同一列，頁首不多出一列、沒有橫向捲動
+          const hd = await page.evaluate(() => ({ h: Math.round(document.querySelector('.site-header').getBoundingClientRect().height), langTop: Math.round(document.querySelector('.lang-switch').getBoundingClientRect().top), brandTop: Math.round(document.querySelector('.brand').getBoundingClientRect().top), sw: document.documentElement.scrollWidth, iw: window.innerWidth }));
+          ok(`header keeps brand and language switch on one row @${w}x${h}`, hd.h <= 112 && Math.abs(hd.langTop - hd.brandTop) < 12 && hd.sw <= hd.iw, JSON.stringify(hd));
+        }
         await page.evaluate(() => window.scrollTo({ top: 900, behavior: 'instant' }));
         await page.waitForTimeout(400);
         const st = await page.evaluate(() => { const r = document.querySelector('.site-header').getBoundingClientRect(); const a = document.querySelector('.site-nav__list a').getBoundingClientRect(); return { top: Math.round(r.top), bottom: Math.round(r.bottom), pillTop: Math.round(a.top) }; });
         ok(`only the nav row stays fixed after scrolling @${w}x${h}`, st.top < 0 && st.bottom <= 60 && st.pillTop >= 6, JSON.stringify(st));
         await page.screenshot({ path: path.join(outDir, `sticky-${w}x${h}.png`), clip: { x: 0, y: 0, width: w, height: Math.min(h, 200) } });
+        // 往回 Shift+Tab 到語言鈕時頁面捲回最上面，語言鈕完整可見（A2-01）
+        await page.evaluate(() => { window.scrollTo({ top: 2000, behavior: 'instant' }); document.querySelector('.site-nav__list a').focus(); });
+        await page.keyboard.press('Shift+Tab');
+        await page.waitForTimeout(300);
+        const lf = await page.evaluate(() => { const r = document.activeElement.getBoundingClientRect(); return { lang: document.activeElement.getAttribute('data-lang'), top: Math.round(r.top), scrollY: Math.round(window.scrollY) }; });
+        ok(`Shift+Tab back to the language button brings it into view @${w}x${h}`, lf.lang === 'zh' && lf.top >= 0 && lf.scrollY === 0, JSON.stringify(lf));
+        await context.close();
+      }
+      // 從分享按鈕往回 Shift+Tab 經過兩組相簿：每一步的焦點元素都在固定頁首下方，焦點框四邊完整（A2-02）
+      for (const width of [375, 1280]) {
+        const { context, page } = await newPage(browser, { width, height: width < 700 ? 812 : 900, reducedMotion: 'reduce' });
+        await page.goto(baseUrl, { waitUntil: 'load' });
+        await settle(page);
+        await page.evaluate(() => document.getElementById('share-btn').focus());
+        const under = [];
+        for (let i = 0; i < 18; i++) {
+          await page.keyboard.press('Shift+Tab');
+          await page.waitForTimeout(80);
+          const p = await page.evaluate(() => { const r = document.activeElement.getBoundingClientRect(); return { top: Math.round(r.top), headerBottom: Math.round(document.querySelector('.site-header').getBoundingClientRect().bottom), tag: document.activeElement.tagName }; });
+          if (!(p.top >= p.headerBottom)) under.push(p);
+        }
+        ok(`Shift+Tab back through the gallery never leaves a tile under the sticky header @${width}`, under.length === 0, JSON.stringify(under.slice(0, 3)));
+        // 捲到底再回到頂端：導覽高亮清掉、導覽列捲回最左（V2-02）
+        await page.evaluate(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'instant' }));
+        await page.waitForTimeout(500);
+        const atBottom = await page.evaluate(() => (document.querySelector('.site-nav__list a[aria-current="true"]') || {}).textContent || null);
+        await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+        await page.waitForTimeout(500);
+        const atTop = await page.evaluate(() => ({ current: (document.querySelector('.site-nav__list a[aria-current="true"]') || {}).textContent || null, scrollLeft: document.querySelector('.site-nav__list').scrollLeft }));
+        ok(`nav highlight clears and the nav list scrolls back when returning to the top @${width}`, !!atBottom && atTop.current === null && atTop.scrollLeft === 0, JSON.stringify({ atBottom, atTop }));
+        await context.close();
+      }
+      // app.js 還沒填入文字時（擋掉 app.js），桌機頁首就已經是單列 68px：不會先變高再縮回（P2-01）
+      for (const width of [900, 1280]) {
+        const { context, page } = await newPage(browser, { width, height: 900 });
+        await page.route('**/app.js', r => r.abort());
+        await page.goto(baseUrl, { waitUntil: 'load' });
+        await page.waitForTimeout(400);
+        const hh = await page.evaluate(() => Math.round(document.querySelector('.site-header').getBoundingClientRect().height));
+        ok(`header is one row (68px) before app.js fills the nav @${width}`, hh === 68, String(hh));
         await context.close();
       }
       // 手機：Tab 走過導覽六項時，每顆膠囊都完整露出、不在右側淡出區底下；按 Enter 後下一個 Tab 進入目標區塊

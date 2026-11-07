@@ -44,13 +44,17 @@
   var HTML_LANG = { ja: 'ja', zh: 'zh-Hant' };
   var doc = document;
 
+  // 「生日當天」的預覽開關（#birthday-preview）只在本機預覽時有效：正式站上任何人都能貼的「假生日」連結不會生效
+  var LOCAL = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(window.location.hostname) || window.location.protocol === 'file:';
+  function wantsBirthdayPreview() { return LOCAL && window.location.hash === '#birthday-preview'; }
+
   var state = {
     lang: 'ja',
     photoGroup: 0,           // 燈箱目前顯示的照片組（GROUPS 的索引）
     photoIndex: -1,          // 燈箱目前顯示的照片（組內索引）；-1 表示關閉
     lastFocus: null,         // 開燈箱前的焦點元素，關閉後要還回去
     fallbackOpen: false,     // 瀏覽器不支援 dialog.showModal 時的備援模式
-    birthdayPreview: window.location.hash === '#birthday-preview',
+    birthdayPreview: wantsBirthdayPreview(),
     countdownState: null,
     shareStatus: null        // 分享按鈕旁的狀態：null、{ kind: 'copied' } 或 { kind: 'manual', url }
   };
@@ -290,8 +294,9 @@
   /* ---------- 相簿：兩組照片（活動照片、視訊回憶），各自有格子與日期說明，燈箱在組內循環 ---------- */
   var callPhotos = DATA.callPhotos || {};
   var GROUPS = [
-    { grid: '#gallery-grid', idPrefix: 'gallery', photos: DATA.photos || [], date: null, captionKey: 'photoCaptionDate' },
-    // wrap：整組的外層（小標＋日期＋說明）；photos 為空時整個隱藏。idPrefix：每格說明與日期的 id 前綴
+    // firstWide：699px 以下第一張整寬（styles.css 的 .gallery__item:first-child），sizes 要用 92vw 那組
+    { grid: '#gallery-grid', idPrefix: 'gallery', firstWide: true, photos: DATA.photos || [], date: null, captionKey: 'photoCaptionDate' },
+    // wrap：整組的外層（小標＋日期＋說明）；photos 為空時整個隱藏。idPrefix：每格說明與日期的 id 前綴。第二組第一張不全寬（J-06）
     { grid: '#gallery-grid-call', idPrefix: 'gallery-call', wrap: '#gallery-call', photos: callPhotos.items || [], date: callPhotos.date || null, captionKey: 'callPhotoCaptionDate' }
   ];
   function photoDate(group, photo) { return photo.date || group.date; }
@@ -319,7 +324,7 @@
       var frame = el('div', 'gallery__frame');
       var picture = el('picture');
       var source = el('source');
-      applyWebpSource(source, photo, index === 0 ? SIZES_GALLERY_FIRST : SIZES_GALLERY);
+      applyWebpSource(source, photo, group.firstWide && index === 0 ? SIZES_GALLERY_FIRST : SIZES_GALLERY);
       var img = el('img', 'gallery__img');
       img.setAttribute('src', photo.src);
       img.setAttribute('loading', 'lazy');
@@ -512,7 +517,8 @@
     var focusables = qsa('button, [href], [tabindex]:not([tabindex="-1"])', lightbox).filter(function (n) { return !n.disabled; });
     if (!focusables.length) { return; }
     var first = focusables[0], last = focusables[focusables.length - 1];
-    if (e.shiftKey && doc.activeElement === first) { e.preventDefault(); last.focus(); }
+    // 剛開啟時焦點在 dialog 本身：Shift+Tab 也要留在燈箱裡（落在最後一顆按鈕），不跑到瀏覽器介面
+    if (e.shiftKey && (doc.activeElement === first || doc.activeElement === lightbox)) { e.preventDefault(); last.focus(); }
     else if (!e.shiftKey && doc.activeElement === last) { e.preventDefault(); first.focus(); }
   }
 
@@ -671,6 +677,15 @@
     function setCurrent(id) {
       if (id === current) { return; }
       current = id;
+      if (!id) {
+        // 回到主視覺：清掉高亮（和第一次載入時相同），手機導覽列也捲回最左
+        links.forEach(function (link) { link.removeAttribute('aria-current'); });
+        var navList = qs('.site-nav__list');
+        if (navList && typeof navList.scrollTo === 'function') {
+          try { navList.scrollTo({ left: 0, behavior: 'auto' }); } catch (e) { /* 舊瀏覽器 */ }
+        }
+        return;
+      }
       links.forEach(function (link) {
         var on = link.getAttribute('href') === '#' + id;
         if (on) {
@@ -687,17 +702,42 @@
       });
     }
     var observer = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) { if (entry.isIntersecting) { setCurrent(entry.target.id); } });
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) { return; }
+        setCurrent(entry.target.id === 'top' ? null : entry.target.id);   // 主視覺（#top）不是導覽目標：進入視窗就清掉高亮
+      });
     }, { rootMargin: '-35% 0px -55% 0px', threshold: 0 });
     links.forEach(function (link) {
       var section = doc.getElementById(link.getAttribute('href').slice(1));
       if (section) { observer.observe(section); }
     });
+    var hero = doc.getElementById('top');
+    if (hero) { observer.observe(hero); }
   }
 
   function setupLangSwitch() {
     qsa('.lang-switch__btn').forEach(function (btn) {
       btn.addEventListener('click', function () { setLang(btn.getAttribute('data-lang')); });
+    });
+    // 手機版頁首只有導覽列固定，品牌列與語言鈕會跟著頁首黏在視窗上方看不見；
+    // 鍵盤往回（Shift+Tab）移到它們時把頁面捲回最上面，焦點才看得見。
+    function revealHeader() {
+      var header = qs('.site-header');
+      if (header && header.getBoundingClientRect().top < 0) {
+        // 'instant'：'auto' 會跟著 html 的 scroll-behavior: smooth 變成平滑捲動，接著被瀏覽器自己的捲動蓋掉
+        try { window.scrollTo({ top: 0, behavior: 'instant' }); } catch (e) { window.scrollTo(0, 0); }
+      }
+    }
+    // 從導覽第一項或語言鈕按 Shift+Tab：在焦點移動之前先捲回頂端，瀏覽器就不會再用平滑捲動去找看不見的元素
+    var firstNav = qs('.site-nav__list a');
+    qsa('.lang-switch__btn').concat(firstNav ? [firstNav] : []).forEach(function (node) {
+      node.addEventListener('keydown', function (e) { if (e.key === 'Tab' && e.shiftKey) { revealHeader(); } });
+    });
+    qsa('.brand, .lang-switch__btn').forEach(function (node) {
+      node.addEventListener('focus', function () {
+        revealHeader();
+        window.setTimeout(revealHeader, 80);   // 瀏覽器自己的「把焦點元素捲進畫面」在 focus 事件之後才做，再補一次
+      });
     });
   }
 
@@ -713,7 +753,7 @@
     renderAll();
     startClock();
     window.addEventListener('hashchange', function () {
-      var preview = window.location.hash === '#birthday-preview';
+      var preview = wantsBirthdayPreview();
       if (preview !== state.birthdayPreview) { state.birthdayPreview = preview; tick(); }
     });
   }

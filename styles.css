@@ -161,8 +161,12 @@ button, a { -webkit-tap-highlight-color: transparent; }
 }
 
 [id] { scroll-margin-top: calc(var(--header-h) + 16px); }
+/* 可取得焦點的元件也留出固定頁首的高度：往回 Shift+Tab 時 Chrome 會把半露出的元件對齊到視窗上緣，
+   沒有這段，照片的上緣與焦點框會被頁首蓋住。只套在 main 裡：頁首內的導覽膠囊與語言鈕不能有 scroll-margin */
+main a, main button { scroll-margin-top: calc(var(--header-h) + 16px); }
 @media (max-width: 899px) {
   [id] { scroll-margin-top: 60px; }
+  main a, main button { scroll-margin-top: 72px; }   /* 固定導覽列 57px ＋ 焦點框 6px ＋ 餘裕 */
 }
 
 /* 字級較大、只有兩三行的顯示用短文：日文在文節處換行，不在詞中間拆開
@@ -220,7 +224,8 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .hero__eyebrow:empty { min-width: 14em; min-height: 1.8em; }
 .hero__name-latin:empty { min-height: 0.95em; }
 .hero__name-kanji:empty { min-height: 1em; }
-.hero__slogan:empty { min-height: 1.9em; }
+.hero__slogan:empty { min-height: calc(1.9em + var(--space-3)); }   /* 一行 ＋ 標語上方的 padding（border-box 會把 padding 算進 min-height） */
+.hero__caption:empty { min-height: 1.6em; }   /* 平板以上日期標籤在照片下方，填入前先佔一行，下面的區塊才不會往下跳 */
 .section__title:empty { min-height: 1.3em; }
 .section__lead:empty { min-height: 1.8em; }
 .share__lead:empty { min-height: 1.8em; }
@@ -310,6 +315,15 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .site-nav__list a[aria-current="true"] { text-decoration: underline; text-underline-offset: 0.2em; }
 }
 
+/* 280～299px（折疊機外螢幕）：品牌與語言切換擠不進一列時，縮小字標與語言鈕內距，不讓語言鈕掉到第二列
+   （掉下去會多出一列，固定在畫面上的就不只導覽列）。必須寫在上面的 .brand__name／.lang-switch__btn 之後 */
+@media (max-width: 299px) {
+  .site-header { top: calc(-1 * (var(--header-h) - 10px)); }   /* 字標縮小後頁首矮 5px，固定的導覽列位置跟著調 */
+  .site-header__inner { gap: var(--space-2); }
+  .brand__name { font-size: var(--step-0); letter-spacing: 0.14em; }
+  .lang-switch__btn { padding: 0 8px; }
+}
+
 .site-nav { flex-basis: 100%; min-width: 0; margin: 0 calc(var(--gutter) * -1) 0; position: relative; }
 .site-nav::after {
   content: "";
@@ -360,6 +374,9 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .brand__sub { white-space: nowrap; }
   .lang-switch { order: 3; margin-left: var(--space-3); }
   .lang-switch__btn { min-height: 32px; padding: 0 10px; white-space: nowrap; }
+  /* 文字填入前的空膠囊：桌機預留 4.5em 就夠（填入後最窄 49px、最寬 140px）；
+     7em 會讓六顆空膠囊換行、頁首先變高再縮回（CLS） */
+  .site-nav__list a:empty { min-width: 4.5em; }
 }
 /* 900～1099px（iPad 橫向等）：單列頁首放不下日文導覽六項時，先收掉副標、縮小導覽字級 */
 @media (min-width: 900px) and (max-width: 1099px) {
@@ -1015,6 +1032,7 @@ main section:focus { outline: none; }
   /* 手機的半寬格子放不下「2026年10月8日・ビデオ通話」時，只在「・」或空格處折行，不折出孤字 */
   word-break: keep-all;
   overflow-wrap: anywhere;
+  text-wrap: pretty;         /* 兩行時不讓最後一行只剩「日」 */
 }
 @media (max-width: 359px) {
   /* 320px 左右的兩欄格子只有 138px 寬：圖說改用燈箱圖說同級的字，日期不加字距，才不會折成三行 */
@@ -1233,6 +1251,20 @@ main section:focus { outline: none; }
     transform: translateX(-50%);
   }
   .lightbox__caption { padding-bottom: 42px; }
+}
+
+/* 橫向的矮視窗（橫向手機、200% 縮放的筆電）：照片依高度縮放整張可見，圖說放在右邊，
+   前後鈕浮在左右、關閉鈕在右上（和桌機一致），不用捲動。480px 以下（400% 縮放的 320×256）仍用上面的可捲動版。
+   寫在桌機的燈箱規則之後，寬且矮的視窗才會套到這一組。 */
+@media (max-height: 479px) and (min-width: 480px) and (orientation: landscape) {
+  .lightbox { overflow: hidden; }
+  .lightbox__figure { flex: 1 1 auto; flex-direction: row; align-items: center; justify-content: center; gap: var(--space-3); padding: 0 64px; }
+  .lightbox__stage { flex: 0 1 auto; width: auto; height: 100%; }
+  .lightbox__img { width: auto; max-height: calc(100vh - 55px); }
+  .lightbox__caption { flex: 0 1 12em; text-align: left; padding: 0; }
+  .lightbox__nav { position: absolute; inset: 0; pointer-events: none; padding: 0 10px; background: transparent; }
+  .lightbox__nav .lightbox__btn { pointer-events: auto; }
+  .lightbox__nav .lightbox__btn--close { position: absolute; top: 6px; right: 10px; width: 46px; height: 46px; }
 }
 
 /* ---------- 應援留言 ---------- */
