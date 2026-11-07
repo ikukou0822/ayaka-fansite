@@ -88,6 +88,20 @@ async function collectText(page) {
   });
 }
 
+// 900～1099px 的單列頁首：高度不超過 64px，導覽最後一項完整、沒有被裁切
+async function checkHeaderFits(page, width, lang) {
+  const h = await page.evaluate(() => {
+    const inner = document.querySelector('.site-header__inner');
+    const list = document.querySelector('.site-nav__list');
+    const links = Array.from(document.querySelectorAll('.site-nav__list a'));
+    const last = links[links.length - 1];
+    const lr = last.getBoundingClientRect(), cr = list.getBoundingClientRect();
+    return { height: Math.round(inner.getBoundingClientRect().height), scrollWidth: list.scrollWidth, clientWidth: list.clientWidth, lastRight: Math.round(lr.right), listRight: Math.round(cr.right), lastText: last.textContent };
+  });
+  ok(`header stays one row (<= 64px) @${width} (${lang})`, h.height <= 64, JSON.stringify(h));
+  ok(`last nav item is not clipped @${width} (${lang})`, h.scrollWidth <= h.clientWidth && h.lastRight <= h.listRight + 1, JSON.stringify(h));
+}
+
 async function switchLang(page, lang) {
   const label = lang === 'zh' ? '繁體中文' : '日本語';
   const btn = page.locator('button', { hasText: label }).first();
@@ -100,7 +114,7 @@ async function switchLang(page, lang) {
   const browser = await chromium.launch(process.env.QA_CHROME_PATH ? { executablePath: process.env.QA_CHROME_PATH } : {});
   try {
     // ---------- per-width light-mode checks in both languages ----------
-    for (const width of [320, 375, 768, 1280, 1440]) {
+    for (const width of [320, 375, 768, 1024, 1280, 1440]) {
       const { context, page } = await newPage(browser, { width, height: width < 700 ? 812 : 900 });
       await page.goto(baseUrl, { waitUntil: 'load' });
       await settle(page);
@@ -108,11 +122,13 @@ async function switchLang(page, lang) {
       ok(`default lang is ja @${width}`, lang0 === 'ja', lang0);
       const over = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, iw: window.innerWidth }));
       ok(`no horizontal overflow @${width} (ja)`, over.sw <= over.iw, JSON.stringify(over));
-      if ([375, 768, 1280].includes(width)) { await loadAllImages(page); await page.screenshot({ path: path.join(outDir, `ja-${width}.png`), fullPage: true }); }
+      if ([375, 768, 1024, 1280].includes(width)) { await loadAllImages(page); await page.screenshot({ path: path.join(outDir, `ja-${width}.png`), fullPage: true }); }
       const jaText = await collectText(page);
       const jaTitle = await page.title();
+      if (width >= 900 && width <= 1099) await checkHeaderFits(page, width, 'ja');
 
       await switchLang(page, 'zh');
+      if (width >= 900 && width <= 1099) await checkHeaderFits(page, width, 'zh');
       const lang1 = await page.evaluate(() => document.documentElement.lang);
       ok(`lang attr becomes zh-Hant @${width}`, lang1 === 'zh-Hant', lang1);
       const over2 = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, iw: window.innerWidth }));
@@ -184,6 +200,32 @@ async function switchLang(page, lang) {
       const csp = await page.evaluate(() => window.__cspViolations);
       ok(`no CSP violations @${width}`, csp.length === 0, JSON.stringify(csp));
       ok(`no console errors @${width}`, page.__errors.length === 0, JSON.stringify(page.__errors));
+      await context.close();
+    }
+
+    // ---------- landscape phone (667x375): hero photo keeps a usable size ----------
+    for (const [w, h] of [[667, 375], [900, 768], [1024, 768]]) {
+      const { context, page } = await newPage(browser, { width: w, height: h, hasTouch: w < 700, isMobile: w < 700 });
+      await page.goto(baseUrl, { waitUntil: 'load' });
+      await settle(page);
+      await page.screenshot({ path: path.join(outDir, `fold-${w}x${h}.png`), fullPage: false });
+      const over = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, iw: window.innerWidth }));
+      ok(`no horizontal overflow @${w}x${h}`, over.sw <= over.iw, JSON.stringify(over));
+      if (w === 667) {
+        const hero = await page.evaluate(() => { const r = document.querySelector('.hero__img').getBoundingClientRect(); return { w: Math.round(r.width), h: Math.round(r.height), top: Math.round(r.top) }; });
+        ok(`landscape hero photo is at least 200px wide @${w}x${h}`, hero.w >= 200, JSON.stringify(hero));
+        await switchLang(page, 'zh');
+        const hero2 = await page.evaluate(() => Math.round(document.querySelector('.hero__img').getBoundingClientRect().width));
+        ok(`landscape hero photo is at least 200px wide @${w}x${h} (zh)`, hero2 >= 200, String(hero2));
+      } else {
+        // 900～1099px：頁首單列、導覽最後一項沒有被裁切（1024 在上面的主迴圈也會檢查）
+        await page.waitForTimeout(800);
+        await page.locator('.site-header').screenshot({ path: path.join(outDir, `header-${w}-ja.png`) });
+        await checkHeaderFits(page, w, 'ja');
+        await switchLang(page, 'zh');
+        await checkHeaderFits(page, w, 'zh');
+        await page.locator('.site-header').screenshot({ path: path.join(outDir, `header-${w}-zh.png`) });
+      }
       await context.close();
     }
 

@@ -140,7 +140,7 @@
       source.removeAttribute('sizes');
     }
   }
-  var SIZES_GALLERY = '(min-width: 900px) 230px, (min-width: 700px) 30vw, 46vw';
+  var SIZES_GALLERY = '(min-width: 1100px) 340px, (min-width: 700px) 30vw, 46vw';
   var SIZES_HERO = '(min-width: 720px) 460px, 92vw';
   var SIZES_LIGHTBOX = '100vw';
 

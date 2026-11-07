@@ -279,7 +279,8 @@ button, a { -webkit-tap-highlight-color: transparent; }
   display: flex;
   gap: 8px;
   overflow-x: auto;
-  padding: 0 var(--gutter) 10px;
+  padding: 6px var(--gutter) 10px;   /* 上方留 6px，膠囊的焦點框才不會被捲動容器裁掉 */
+  margin-top: -6px;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
   scroll-snap-type: x proximity;
@@ -308,10 +309,16 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .site-header__inner { flex-wrap: nowrap; }
   .site-nav { flex-basis: auto; margin: 0 0 0 auto; }
   .site-nav::after { display: none; }
-  .site-nav__list { padding: 0; gap: 4px; }
+  .site-nav__list { padding: 0; margin-top: 0; gap: 4px; }
   .site-nav__list a { min-height: 36px; padding: 0 12px; border-color: transparent; background: transparent; }
   .lang-switch { order: 3; margin-left: var(--space-3); }
-  .lang-switch__btn { min-height: 32px; padding: 0 10px; }
+  .lang-switch__btn { min-height: 32px; padding: 0 10px; white-space: nowrap; }
+}
+/* 900～1099px（iPad 橫向等）：單列頁首放不下日文導覽六項時，先收掉副標、縮小導覽字級 */
+@media (min-width: 900px) and (max-width: 1099px) {
+  .brand__sub { display: none; }
+  .site-nav__list { gap: 0; }
+  .site-nav__list a { padding: 0 8px; font-size: var(--step--2); }
 }
 
 /* ---------- 首頁主視覺 ---------- */
@@ -488,7 +495,8 @@ button, a { -webkit-tap-highlight-color: transparent; }
 
 .hero__kana-vertical { display: none; }
 
-@media (min-width: 720px) {
+/* 平板以上，以及橫向手機（560～719px）：文字｜照片 兩欄 */
+@media (min-width: 720px), (min-width: 560px) and (max-width: 719px) and (orientation: landscape) {
   .hero { padding: var(--space-6) 0 var(--space-7); }
   .hero__inner {
     grid-template-columns: minmax(0, 1fr) minmax(360px, 0.9fr);
@@ -518,6 +526,14 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .hero__name-latin { font-size: clamp(4rem, 9vw, 7.5rem); }
   .hero__eyebrow { margin-bottom: var(--space-4); }
 }
+/* 橫向手機：螢幕只有 320～375px 高，照片不再限制高度，但欄寬與字級縮小 */
+@media (min-width: 560px) and (max-width: 719px) and (orientation: landscape) {
+  .hero { padding: var(--space-4) 0 var(--space-5); }
+  .hero__inner { grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr); gap: var(--space-4); }
+  .hero__name-latin { font-size: clamp(2.75rem, 7vw, 3.5rem); }
+  .hero__name-jp { font-size: 1.5rem; }
+  .hero__eyebrow { margin-bottom: var(--space-2); }
+}
 @media (min-width: 900px) {
   .hero { padding: var(--space-7) 0; }
   .hero__inner {
@@ -528,8 +544,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .hero__name-jp { font-size: clamp(2.5rem, 3.2vw, 3rem); letter-spacing: 0.12em; }
   .hero__name-kana { font-size: var(--step-0); }
   .hero__slogan { font-size: var(--step-2); max-width: 20em; }
-  .hero__figure { margin-right: 2.5rem; }
-  .hero__figure { margin-right: 0; margin-left: 3rem; }
+  .hero__figure { margin-left: 3rem; }
   .hero__kana-vertical {
     display: block;
     position: absolute;
@@ -731,7 +746,6 @@ button, a { -webkit-tap-highlight-color: transparent; }
   user-select: none;
 }
 .birthday__mark::before { content: attr(data-mark); }
-.birthday { margin-left: 0; }
 .birthday__lead { color: var(--text-muted); font-size: var(--step--1); letter-spacing: 0.04em; }
 .countdown {
   display: grid;
@@ -765,6 +779,8 @@ button, a { -webkit-tap-highlight-color: transparent; }
   letter-spacing: 0.04em;
   line-height: 1.4;
   padding: var(--space-3) 0 var(--space-2);
+  text-wrap: balance;
+  word-break: auto-phrase;   /* 「お誕生日」不會在詞中間被拆開 */
 }
 .birthday__greeting-lead { color: var(--text-muted); }
 
@@ -839,7 +855,6 @@ button, a { -webkit-tap-highlight-color: transparent; }
   letter-spacing: 0.06em;
   font-variant-numeric: tabular-nums;
 }
-.timeline__date--unknown { color: var(--text-muted); }
 .timeline__title { font-size: var(--step-1); font-weight: 600; line-height: 1.5; margin-top: 2px; text-wrap: balance; word-break: auto-phrase; }
 .timeline__note { color: var(--text-muted); margin-top: var(--space-1); font-size: var(--step--1); line-height: 1.8; }
 
@@ -915,7 +930,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
   color: var(--text-muted);
   letter-spacing: 0.08em;
 }
-.gallery__caption-text { grid-column: 2; }
+.gallery__caption-text { grid-column: 2; word-break: auto-phrase; line-break: strict; }
 @media (max-width: 699px) {
   .gallery__item:first-child { grid-column: 1 / -1; }
 }
@@ -1007,6 +1022,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
   font-size: var(--step--1);
   line-height: 1.6;
 }
+.lightbox__caption-text { word-break: auto-phrase; line-break: strict; }
 .lightbox__caption-date {
   display: block;
   color: rgba(255, 255, 255, 0.62);
