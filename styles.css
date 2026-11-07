@@ -92,17 +92,6 @@
   }
   .hero__img, .gallery__img { filter: brightness(0.9) contrast(1.02); }
   .lightbox__img { filter: none; }
-  /* 深色模式的主視覺光暈：用飽和度較高、明度較低的四色，模糊放大；
-     淺色的粉彩只降透明度疊在深底上會變成一圈灰霧 */
-  .hero__glow {
-    background:
-      radial-gradient(45% 40% at 20% 25%, rgba(214, 110, 150, var(--glow-opacity)), transparent 60%),
-      radial-gradient(40% 36% at 80% 20%, rgba(100, 150, 220, var(--glow-opacity)), transparent 60%),
-      radial-gradient(45% 40% at 70% 85%, rgba(150, 115, 220, var(--glow-opacity)), transparent 60%),
-      radial-gradient(40% 36% at 20% 80%, rgba(220, 180, 90, var(--glow-opacity)), transparent 60%);
-    filter: blur(40px);
-    opacity: 0.6;
-  }
 }
 
 /* 繁體中文時優先使用台灣常見的字型，字形才會是台灣慣用的寫法 */
@@ -183,7 +172,11 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .birthday__lead,
 .birthday__greeting-lead,
 .message__text,
-.timeline__note { word-break: auto-phrase; }
+.timeline__note,
+.timeline__placeholder,
+.gallery-group__lead,
+.share__lead,
+.notfound__text { word-break: auto-phrase; }
 
 .visually-hidden {
   position: absolute !important;
@@ -361,6 +354,9 @@ button, a { -webkit-tap-highlight-color: transparent; }
   /* 桌機導覽放不下時（例如放大文字間距）換行，不在看不見的捲動容器裡被裁掉 */
   .site-nav__list { padding: 0; margin-top: 0; gap: 4px; flex-wrap: wrap; overflow: visible; justify-content: flex-end; }
   .site-nav__list a { min-height: 36px; padding: 0 12px; border-color: transparent; background: transparent; }
+  /* hover 用淡灰底，和「目前區塊」的粉色膠囊分得開 */
+  .site-nav__list a:hover { background: var(--surface-2); color: var(--text); }
+  .site-nav__list a[aria-current="true"]:hover { background: var(--accent-soft); color: var(--accent-strong); }
   .brand__sub { white-space: nowrap; }
   .lang-switch { order: 3; margin-left: var(--space-3); }
   .lang-switch__btn { min-height: 32px; padding: 0 10px; white-space: nowrap; }
@@ -408,6 +404,20 @@ button, a { -webkit-tap-highlight-color: transparent; }
   filter: blur(28px);
   opacity: 0.8;
   pointer-events: none;
+}
+@media (prefers-color-scheme: dark) {
+  /* 深色模式的主視覺光暈：用飽和度較高、明度較低的四色，模糊放大；
+     淺色的粉彩只降透明度疊在深底上會變成一圈灰霧。
+     這段必須寫在上面的 .hero__glow 之後（同一個選擇器、同樣的特異度），否則會被蓋掉 */
+  .hero__glow {
+    background:
+      radial-gradient(45% 40% at 20% 25%, rgba(214, 110, 150, var(--glow-opacity)), transparent 60%),
+      radial-gradient(40% 36% at 80% 20%, rgba(100, 150, 220, var(--glow-opacity)), transparent 60%),
+      radial-gradient(45% 40% at 70% 85%, rgba(150, 115, 220, var(--glow-opacity)), transparent 60%),
+      radial-gradient(40% 36% at 20% 80%, rgba(220, 180, 90, var(--glow-opacity)), transparent 60%);
+    filter: blur(40px);
+    opacity: 0.6;
+  }
 }
 .hero__frame {
   position: relative;
@@ -729,7 +739,8 @@ main section:focus { outline: none; }
   letter-spacing: 0.06em;
   word-break: keep-all;      /* 「Nizi Project（虹プロジェクト）」放不下時在空格處換行，不拆片假名 */
 }
-.profile__value { font-weight: 500; }
+.profile__value { font-weight: 500; word-break: auto-phrase; }   /* 日文在文節處換行（「として」不拆成「と／して」） */
+:lang(zh-Hant) .profile__value { word-break: keep-all; overflow-wrap: anywhere; }   /* 中文只在空格處換行（「正式」不拆成「正／式」） */
 .profile__value--placeholder {
   display: inline-block;
   font-weight: 400;
@@ -1004,6 +1015,11 @@ main section:focus { outline: none; }
   /* 手機的半寬格子放不下「2026年10月8日・ビデオ通話」時，只在「・」或空格處折行，不折出孤字 */
   word-break: keep-all;
   overflow-wrap: anywhere;
+}
+@media (max-width: 359px) {
+  /* 320px 左右的兩欄格子只有 138px 寬：圖說改用燈箱圖說同級的字，日期不加字距，才不會折成三行 */
+  .gallery__caption { font-size: var(--step--1); }
+  .gallery__date { letter-spacing: 0; }
 }
 
 @media (hover: hover) {
@@ -1336,6 +1352,7 @@ main section:focus { outline: none; }
   top: -0.15em;
 }
 .share__url {
+  display: block;                 /* 網址獨立一行，不在連字號處折斷 */
   color: var(--accent-strong);
   font-variant-numeric: tabular-nums;
   -webkit-user-select: all;

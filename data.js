@@ -142,7 +142,8 @@ window.SITE_DATA = {
     { label: { ja: '本名',      zh: '本名' },     value: { ja: '新井　彩花', zh: '新井彩花' } },
     { label: { ja: '生年月日',  zh: '出生日期' }, value: { ja: '2003年6月20日', zh: '2003 年 6 月 20 日' }, showAge: true },
     { label: { ja: '虹プロジェクト', zh: 'Nizi Project（虹プロジェクト）' }, value: { ja: '最終順位8位', zh: '最終排名第 8\u00a0名' } },
-    { label: { ja: 'デビュー',  zh: '出道' },     value: { ja: '2020年12月、シングル「Step and a step」でNiziUとして正式デビュー', zh: '2020 年 12 月以單曲〈Step and a step〉隨 NiziU 正式出道' } },
+    // 日文「として」中間的 ⁠（WORD JOINER）看不見、也不會被唸出來，只是避免換行時被切成「と／して」；改文字時可以保留或刪掉
+    { label: { ja: 'デビュー',  zh: '出道' },     value: { ja: '2020年12月、シングル「Step and a step」でNiziUと⁠して正式デビュー', zh: '2020 年 12 月以單曲〈Step and a step〉隨 NiziU 正式出道' } },
     { label: { ja: '出身地',    zh: '出身地' },   value: null },
     { label: { ja: '身長',      zh: '身高' },     value: null },
     { label: { ja: '血液型',    zh: '血型' },     value: null },

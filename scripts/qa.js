@@ -528,6 +528,9 @@ async function switchLang(page, lang) {
       await page.waitForTimeout(500);
       const s = await shareButtonInfo(page);
       ok('without clipboard the status shows the URL itself @375', !!s && !!canonical && s.statusText.includes(canonical) && s.statusOpacity === 1, JSON.stringify(s));
+      // 網址是可聚焦的連結（鍵盤與螢幕閱讀器也能取用），冒號後沒有多餘的空格
+      const urlLink = await page.evaluate(() => { const a = document.querySelector('#share-status a.share__url'); const t = document.querySelector('#share-status').firstChild; return { tag: a ? a.tagName : null, href: a ? a.href : null, before: t ? t.textContent : null }; });
+      ok('the fallback URL is a link to the canonical URL with no space after the colon', urlLink.tag === 'A' && urlLink.href === canonical && !!urlLink.before && !/\s$/.test(urlLink.before), JSON.stringify(urlLink));
       const over = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, iw: window.innerWidth }));
       ok('no horizontal overflow with the URL shown @375', over.sw <= over.iw, JSON.stringify(over));
       await page.locator('.share').screenshot({ path: path.join(outDir, 'share-manual-375.png') });
@@ -619,6 +622,9 @@ async function switchLang(page, lang) {
       const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
       report.info[`darkBodyBg${width}`] = bg;
       ok(`dark mode changes body background @${width}`, !/rgb\(255, 255, 255\)/.test(bg), bg);
+      // 深色模式的主視覺光暈要用另一組顏色與較大的模糊（V-03／V2-01：規則順序錯了會被淺色的蓋掉）
+      const glow = await page.evaluate(() => { const s = getComputedStyle(document.querySelector('.hero__glow')); return { filter: s.filter, opacity: s.opacity, bg: s.backgroundImage.slice(0, 60) }; });
+      ok(`dark mode hero glow uses the dark palette (blur 40px) @${width}`, glow.filter === 'blur(40px)' && /rgba\(214, 110, 150/.test(glow.bg), JSON.stringify(glow));
       // 深色模式的分享按鈕與狀態文字
       await page.locator('#share-btn').scrollIntoViewIfNeeded();
       await page.locator('#share-btn').focus();

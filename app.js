@@ -581,8 +581,11 @@
     if (s.kind === 'copied') {
       status.textContent = ui('shareCopied');
     } else {
-      status.appendChild(doc.createTextNode(ui('shareCopyManual') + ' '));
-      status.appendChild(el('span', 'share__url', s.url));
+      // 顯示網址的狀態：網址做成指向同一個 canonical 網址的連結，鍵盤使用者與螢幕閱讀器也能取用（複製連結網址）
+      status.appendChild(doc.createTextNode(ui('shareCopyManual')));
+      var link = el('a', 'share__url', s.url);
+      link.href = s.url;
+      status.appendChild(link);
     }
   }
 
