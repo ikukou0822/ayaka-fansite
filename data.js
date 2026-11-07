@@ -14,7 +14,7 @@ window.SITE_DATA = {
   site: {
     defaultLang: 'ja',                       // 預設語言：'ja' 或 'zh'
     storageKey: 'ayaka-fansite:lang',        // 記住語言用的 localStorage 鍵名
-    lastUpdated: '2026-11-04',               // 頁尾「最後更新」日期（YYYY-MM-DD）
+    lastUpdated: '2026-11-08',               // 頁尾「最後更新」日期（YYYY-MM-DD）
     birthday: { year: 2003, month: 6, day: 20 }, // 生日（以日本時間計算）
     url: 'https://dc9408222000-hub.github.io/ayaka-fansite/', // 網站網址（分享預覽用；index.html 的 og: 標籤也要一起改）
     // 照片的 WebP 版本：true 時會載入 photos/xxx-480.webp、xxx-800.webp、xxx-full.webp（用 scripts/make_images.py 產生）
