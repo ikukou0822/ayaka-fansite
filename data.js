@@ -114,6 +114,15 @@ window.SITE_DATA = {
 
     aboutTitle:      { ja: 'このサイトについて', zh: '關於本站' },
 
+    // 「分享這個網站」按鈕（關於本站區塊的最後）。
+    // shareText 是系統分享選單裡附在網址旁的一句說明（請保持簡短）；
+    // shareCopied 是複製成功後顯示幾秒的提示；shareCopyManual 是無法複製時顯示在網址前面的說明。
+    shareLead:       { ja: 'このサイトを気に入っていただけたら、ぜひシェアしてください。', zh: '喜歡這個網站的話，歡迎分享給朋友。' },
+    shareButton:     { ja: 'このサイトをシェア', zh: '分享這個網站' },
+    shareText:       { ja: 'NiziUのAYAKA（彩花）を応援する非公式応援サイトです。', zh: '應援 NiziU 成員 AYAKA（彩花）的非官方應援網站。' },
+    shareCopied:     { ja: 'URLをコピーしました', zh: '已複製網址' },
+    shareCopyManual: { ja: 'コピーできませんでした。こちらのURLをお使いください：', zh: '無法自動複製，請手動複製這個網址：' },
+
     footerUpdated:   { ja: '最終更新：{date}', zh: '最後更新：{date}' },
     noscript:        { ja: 'このサイトはJavaScriptを使用しています。ブラウザのJavaScriptを有効にしてご覧ください。', zh: '本網站需要啟用 JavaScript 才能正常顯示。' },
     photoCaptionDate: { ja: '{date} 撮影', zh: '攝於 {date}' },

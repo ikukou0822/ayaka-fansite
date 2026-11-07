@@ -177,7 +177,21 @@
           <p class="eyebrow" data-ui="eyebrowAbout"></p>
           <h2 class="section__title" id="about-title" data-ui="aboutTitle"></h2>
         </header>
-        <div class="prose" id="about-text"></div>
+        <div class="about__body">
+          <div class="prose" id="about-text"></div>
+          <div class="share">
+            <p class="share__lead" data-ui="shareLead"></p>
+            <div class="share__row">
+              <button type="button" class="share__btn" id="share-btn">
+                <svg class="share__icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
+                  <path d="M12 15V3M8 7l4-4 4 4M5 11v8a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 19v-8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="share__label" data-ui="shareButton"></span>
+              </button>
+              <p class="share__status" id="share-status" aria-live="polite" aria-atomic="true"></p>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -220,6 +234,7 @@
 
   <script src="data.js"></script>
   <script src="countdown.js"></script>
+  <script src="share.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

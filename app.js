@@ -1,5 +1,5 @@
 /* =====================================================================
-   app.js — 把 data.js 的內容畫到畫面上、語言切換、生日倒數、相簿燈箱。
+   app.js — 把 data.js 的內容畫到畫面上、語言切換、生日倒數、相簿燈箱、分享按鈕。
    - 只用 textContent / createElement 寫入資料，不用 innerHTML
    - localStorage 的讀寫都包在 try/catch 裡
    - 不依賴任何第三方程式庫
@@ -9,6 +9,7 @@
 
   var DATA = window.SITE_DATA;
   var Countdown = window.AyakaCountdown;
+  var Share = window.AyakaShare;   // share.js；沒載到時只會藏起分享按鈕，其他功能照常
   if (!DATA || !Countdown) { return; }
 
   // 被別的網站用 iframe 嵌入時：GitHub Pages 無法設定 X-Frame-Options／frame-ancestors，
@@ -41,7 +42,8 @@
     lastFocus: null,         // 開燈箱前的焦點元素，關閉後要還回去
     fallbackOpen: false,     // 瀏覽器不支援 dialog.showModal 時的備援模式
     birthdayPreview: window.location.hash === '#birthday-preview',
-    countdownState: null
+    countdownState: null,
+    shareStatus: null        // 分享按鈕旁的狀態：null、{ kind: 'copied' } 或 { kind: 'manual', url }
   };
 
   /* ---------- 小工具 ---------- */
@@ -505,6 +507,94 @@
     if (u) { u.textContent = fill(ui('footerUpdated'), { date: formatDate(DATA.site.lastUpdated) }); }
   }
 
+  /* ---------- 分享這個網站 ----------
+     1. 有 navigator.share（手機、部分桌機瀏覽器）：開系統分享選單，分享標題、一句說明（data.js）和網址；
+        使用者自己取消（AbortError）時什麼都不顯示，其他失敗則退回 2。
+     2. 沒有：用剪貼簿複製網址，按鈕旁的 aria-live 狀態文字顯示「URLをコピーしました／已複製網址」，幾秒後淡出。
+     3. 連剪貼簿也不能用：狀態文字直接顯示網址，讓使用者自己複製（不會消失）。
+     網址一律來自 <link rel="canonical">（share.js 的 resolveShareUrl）。 */
+  var SHARE_STATUS_MS = 4000;
+  var shareTimers = [];
+
+  function clearShareTimers() {
+    shareTimers.forEach(function (id) { window.clearTimeout(id); });
+    shareTimers = [];
+  }
+
+  function shareUrl() {
+    var canonical = qs('link[rel="canonical"]');
+    return Share.resolveShareUrl(canonical ? canonical.getAttribute('href') : null, window.location.href);
+  }
+
+  /** 依 state.shareStatus 重畫狀態文字（切換語言時也會呼叫，文字才會跟著換） */
+  function renderShareStatus() {
+    var status = qs('#share-status');
+    if (!status) { return; }
+    var s = state.shareStatus;
+    clear(status);
+    status.classList.toggle('share__status--ok', !!s && s.kind === 'copied');
+    status.classList.toggle('is-visible', !!s);
+    if (!s) { return; }
+    if (s.kind === 'copied') {
+      status.textContent = ui('shareCopied');
+    } else {
+      status.appendChild(doc.createTextNode(ui('shareCopyManual') + ' '));
+      status.appendChild(el('span', 'share__url', s.url));
+    }
+  }
+
+  function showShareStatus(kind, url) {
+    clearShareTimers();
+    state.shareStatus = { kind: kind, url: url };
+    renderShareStatus();
+    if (kind !== 'copied') { return; }   // 顯示網址的狀態不會自動消失
+    shareTimers.push(window.setTimeout(function () {
+      state.shareStatus = null;
+      var status = qs('#share-status');
+      if (status) { status.classList.remove('is-visible'); }   // 先淡出（reduced-motion 時直接消失）
+      shareTimers.push(window.setTimeout(function () {
+        if (!state.shareStatus) { renderShareStatus(); }        // 淡出後再清掉文字（不會被再唸一次）
+      }, 500));
+    }, SHARE_STATUS_MS));
+  }
+
+  function copyShareUrl(url) {
+    var nav = window.navigator;
+    if (!Share.canCopy(nav)) { showShareStatus('manual', url); return; }
+    var p;
+    try { p = nav.clipboard.writeText(url); } catch (e) { p = Promise.reject(e); }
+    Promise.resolve(p).then(function () {
+      showShareStatus('copied');
+    }, function () {
+      showShareStatus('manual', url);
+    });
+  }
+
+  function shareSite() {
+    var url = shareUrl();
+    var nav = window.navigator;
+    if (Share.shareMethod(nav) !== 'share') { copyShareUrl(url); return; }
+    var data = Share.buildShareData(t(DATA.site.title), ui('shareText'), url);
+    var p;
+    try { p = nav.share(data); } catch (e) { p = Promise.reject(e); }
+    Promise.resolve(p).then(function () {
+      state.shareStatus = null;
+      clearShareTimers();
+      renderShareStatus();
+    }, function (err) {
+      if (Share.isAbortError(err)) { return; }   // 使用者取消：不顯示任何訊息
+      copyShareUrl(url);                         // 其他失敗（不支援這組資料等）：退回複製網址
+    });
+  }
+
+  function setupShare() {
+    var btn = qs('#share-btn');
+    var box = qs('.share');
+    if (!btn) { return; }
+    if (!Share) { if (box) { box.hidden = true; } return; }
+    btn.addEventListener('click', shareSite);
+  }
+
   /* ---------- 全部重畫（切換語言時） ---------- */
   function renderAll() {
     renderStaticText();
@@ -516,6 +606,7 @@
     if (state.photoIndex >= 0) { showPhoto(state.photoIndex); }
     renderMessages();
     renderAbout();
+    renderShareStatus();
     renderFooter();
   }
 
@@ -568,6 +659,7 @@
     buildGallery();
     setupLightbox();
     setupLangSwitch();
+    setupShare();
     setupNavHighlight();
     renderAll();
     startClock();

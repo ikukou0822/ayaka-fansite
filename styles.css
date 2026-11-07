@@ -209,6 +209,8 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .hero__slogan:empty { min-height: 1.9em; }
 .section__title:empty { min-height: 1.3em; }
 .section__lead:empty { min-height: 1.8em; }
+.share__lead:empty { min-height: 1.8em; }
+.share__label:empty { min-width: 8em; }
 
 /* ---------- 頁首 ---------- */
 .site-header {
@@ -1164,6 +1166,80 @@ button, a { -webkit-tap-highlight-color: transparent; }
 /* ---------- 關於 ---------- */
 .prose p + p { margin-top: var(--space-3); }
 .prose { max-width: var(--measure); }
+
+/* ---------- 分享這個網站（關於本站的最後） ---------- */
+.share {
+  max-width: var(--measure);
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+.share__lead {
+  margin-bottom: var(--space-3);
+  font-size: var(--step--1);
+  color: var(--text-muted);
+  text-wrap: pretty;
+}
+.share__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+.share__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55em;
+  min-height: 44px;
+  padding: 0 20px 0 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--accent-strong);
+  font-size: var(--step--1);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1.4;
+  white-space: nowrap;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.share__btn:hover { background: var(--accent-soft); border-color: var(--accent); }
+.share__icon { width: 16px; height: 16px; flex: 0 0 auto; }
+@media (max-width: 719px) {
+  .share__btn { font-size: var(--step-0); }
+}
+/* 狀態文字（aria-live）：複製成功後顯示幾秒再淡出；無法複製時顯示網址，不會消失 */
+.share__status {
+  min-width: 0;
+  font-size: var(--step--1);
+  line-height: 1.6;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.share__status.is-visible { opacity: 1; }
+@media (max-width: 719px) {
+  /* 手機：狀態文字固定在按鈕下方一列，並先預留高度，出現時版面不會跳動 */
+  .share__status { flex-basis: 100%; min-height: 1.6em; }
+}
+.share__status--ok::before {
+  content: "";
+  display: inline-block;
+  width: 0.4em; height: 0.75em;
+  margin-right: 0.6em;
+  border-right: 2px solid var(--accent-strong);
+  border-bottom: 2px solid var(--accent-strong);
+  transform: rotate(45deg);
+  position: relative;
+  top: -0.15em;
+}
+.share__url {
+  color: var(--accent-strong);
+  font-variant-numeric: tabular-nums;
+  -webkit-user-select: all;
+  user-select: all;
+}
 
 /* ---------- 頁尾 ---------- */
 .site-footer {

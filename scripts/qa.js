@@ -31,6 +31,7 @@ async function newPage(browser, opts = {}) {
     locale: opts.locale || 'ja-JP',
     timezoneId: opts.timezoneId || 'Asia/Taipei',
     bypassCSP: !!opts.bypassCSP,
+    permissions: opts.permissions || [],
   });
   const page = await context.newPage();
   const errors = [];
@@ -102,6 +103,27 @@ async function checkHeaderFits(page, width, lang) {
   ok(`last nav item is not clipped @${width} (${lang})`, h.scrollWidth <= h.clientWidth && h.lastRight <= h.listRight + 1, JSON.stringify(h));
 }
 
+// 分享按鈕：真正的 <button>、有文字、放在「關於本站」區塊裡，旁邊有 aria-live="polite" 的狀態文字
+async function shareButtonInfo(page) {
+  return page.evaluate(() => {
+    const btn = document.getElementById('share-btn');
+    if (!btn) return null;
+    const r = btn.getBoundingClientRect();
+    const status = document.getElementById('share-status');
+    return {
+      tag: btn.tagName, type: btn.getAttribute('type'), text: btn.textContent.trim(), w: Math.round(r.width), h: Math.round(r.height),
+      inAbout: !!btn.closest('#about'), live: status ? status.getAttribute('aria-live') : null, statusText: status ? status.textContent.trim() : null,
+      statusOpacity: status ? parseFloat(getComputedStyle(status).opacity) : null, hidden: !!btn.closest('[hidden]'),
+    };
+  });
+}
+async function checkShareButton(page, width, lang) {
+  const s = await shareButtonInfo(page);
+  ok(`share button exists in the About section with text @${width} (${lang})`, !!s && s.tag === 'BUTTON' && s.type === 'button' && s.text.length > 0 && s.inAbout && !s.hidden && s.w > 0 && s.h >= 40, JSON.stringify(s));
+  ok(`share status is an empty polite live region before use @${width} (${lang})`, !!s && s.live === 'polite' && s.statusText === '', JSON.stringify(s));
+  return s;
+}
+
 async function switchLang(page, lang) {
   const label = lang === 'zh' ? '繁體中文' : '日本語';
   const btn = page.locator('button', { hasText: label }).first();
@@ -126,9 +148,12 @@ async function switchLang(page, lang) {
       const jaText = await collectText(page);
       const jaTitle = await page.title();
       if (width >= 900 && width <= 1099) await checkHeaderFits(page, width, 'ja');
+      const shareJa = await checkShareButton(page, width, 'ja');
 
       await switchLang(page, 'zh');
       if (width >= 900 && width <= 1099) await checkHeaderFits(page, width, 'zh');
+      const shareZh = await checkShareButton(page, width, 'zh');
+      ok(`share button text changes with language @${width}`, !!shareJa && !!shareZh && shareJa.text !== shareZh.text && /シェア/.test(shareJa.text) && /分享/.test(shareZh.text), `${shareJa && shareJa.text} / ${shareZh && shareZh.text}`);
       const lang1 = await page.evaluate(() => document.documentElement.lang);
       ok(`lang attr becomes zh-Hant @${width}`, lang1 === 'zh-Hant', lang1);
       const over2 = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, iw: window.innerWidth }));
@@ -330,6 +355,92 @@ async function switchLang(page, lang) {
       await context.close();
     }
 
+    // ---------- share button: without navigator.share it copies the canonical URL and announces it ----------
+    for (const width of [375, 768, 1280]) {
+      const { context, page } = await newPage(browser, { width, height: width < 700 ? 812 : 900, hasTouch: width < 700, isMobile: width < 700, permissions: ['clipboard-read', 'clipboard-write'] });
+      // 明確拿掉 navigator.share（Linux 的 Chromium 本來就沒有），強制走「複製網址」的路徑
+      await page.addInitScript(() => { Object.defineProperty(Navigator.prototype, 'share', { value: undefined, configurable: true }); });
+      await page.goto(baseUrl, { waitUntil: 'load' });
+      await settle(page);
+      const canonical = await page.evaluate(() => (document.querySelector('link[rel="canonical"]') || {}).href || null);
+      ok(`canonical link exists for the share URL @${width}`, !!canonical && /^https:\/\//.test(canonical), String(canonical));
+      const btn = page.locator('#share-btn');
+      await btn.scrollIntoViewIfNeeded();
+      await page.waitForTimeout(300);
+      await page.locator('.share').screenshot({ path: path.join(outDir, `share-idle-${width}.png`) });
+      // keyboard: focus the button and press Enter (works like a click on a real <button>)
+      await btn.focus();
+      await page.waitForTimeout(100);
+      await page.screenshot({ path: path.join(outDir, `share-focus-${width}.png`), fullPage: false });
+      await page.keyboard.press('Enter');
+      await page.waitForTimeout(600);
+      const s1 = await shareButtonInfo(page);
+      ok(`pressing the share button shows the "copied" status (ja) @${width}`, !!s1 && /コピーしました/.test(s1.statusText) && s1.statusOpacity === 1, JSON.stringify(s1));
+      const clip = await page.evaluate(() => navigator.clipboard.readText().catch(e => 'ERR ' + e.message));
+      ok(`clipboard holds the canonical URL @${width}`, clip === canonical, `${clip} vs ${canonical}`);
+      await page.locator('.share').screenshot({ path: path.join(outDir, `share-copied-${width}.png`) });
+      const over = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, iw: window.innerWidth }));
+      ok(`no horizontal overflow with the share status visible @${width}`, over.sw <= over.iw, JSON.stringify(over));
+      // 切換語言：狀態文字跟著換
+      await switchLang(page, 'zh');
+      const s2 = await shareButtonInfo(page);
+      ok(`share status text follows the language switch @${width}`, !!s2 && /已複製網址/.test(s2.statusText) && /分享/.test(s2.text), JSON.stringify(s2));
+      await page.locator('.share').screenshot({ path: path.join(outDir, `share-copied-zh-${width}.png`) });
+      // 幾秒後淡出並清空（不會留在無障礙樹裡被再唸一次）
+      await page.waitForTimeout(5200);
+      const s3 = await shareButtonInfo(page);
+      ok(`share status fades out and clears after a few seconds @${width}`, !!s3 && s3.statusText === '' && s3.statusOpacity === 0, JSON.stringify(s3));
+      ok(`no console errors in share session @${width}`, page.__errors.length === 0, JSON.stringify(page.__errors));
+      await context.close();
+    }
+    // 連剪貼簿也不能用：狀態文字顯示網址本身（不會消失）
+    {
+      const { context, page } = await newPage(browser, { width: 375 });
+      await page.addInitScript(() => {
+        Object.defineProperty(Navigator.prototype, 'share', { value: undefined, configurable: true });
+        Object.defineProperty(Navigator.prototype, 'clipboard', { get: () => undefined, configurable: true });
+      });
+      await page.goto(baseUrl, { waitUntil: 'load' });
+      await settle(page);
+      const canonical = await page.evaluate(() => (document.querySelector('link[rel="canonical"]') || {}).href || null);
+      await page.locator('#share-btn').click();
+      await page.waitForTimeout(500);
+      const s = await shareButtonInfo(page);
+      ok('without clipboard the status shows the URL itself @375', !!s && !!canonical && s.statusText.includes(canonical) && s.statusOpacity === 1, JSON.stringify(s));
+      const over = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, iw: window.innerWidth }));
+      ok('no horizontal overflow with the URL shown @375', over.sw <= over.iw, JSON.stringify(over));
+      await page.locator('.share').screenshot({ path: path.join(outDir, 'share-manual-375.png') });
+      await page.waitForTimeout(4700);
+      const s2 = await shareButtonInfo(page);
+      ok('the URL stays visible (does not fade) @375', !!s2 && s2.statusText.includes(canonical) && s2.statusOpacity === 1, JSON.stringify(s2));
+      ok('no console errors in manual-copy session @375', page.__errors.length === 0, JSON.stringify(page.__errors));
+      await context.close();
+    }
+    // navigator.share 存在：會被呼叫、拿到標題／說明／網址；使用者取消（AbortError）時不顯示任何訊息
+    {
+      const { context, page } = await newPage(browser, { width: 375, permissions: ['clipboard-read', 'clipboard-write'] });
+      await page.addInitScript(() => {
+        window.__shared = [];
+        Object.defineProperty(Navigator.prototype, 'share', {
+          value: function (data) { window.__shared.push(data); const e = new Error('cancelled'); e.name = 'AbortError'; return Promise.reject(e); },
+          configurable: true,
+        });
+      });
+      await page.goto(baseUrl, { waitUntil: 'load' });
+      await settle(page);
+      await page.evaluate(() => navigator.clipboard.writeText('untouched'));
+      await page.locator('#share-btn').click();
+      await page.waitForTimeout(500);
+      const shared = await page.evaluate(() => window.__shared);
+      const canonical = await page.evaluate(() => (document.querySelector('link[rel="canonical"]') || {}).href || null);
+      ok('navigator.share receives title, text and the canonical URL', shared.length === 1 && shared[0].url === canonical && /AYAKA/.test(shared[0].title || '') && (shared[0].text || '').length > 5, JSON.stringify(shared));
+      const s = await shareButtonInfo(page);
+      const clip = await page.evaluate(() => navigator.clipboard.readText().catch(e => 'ERR ' + e.message));
+      ok('cancelling the share sheet (AbortError) shows nothing and does not copy', !!s && s.statusText === '' && s.statusOpacity === 0 && clip === 'untouched', JSON.stringify({ s, clip }));
+      ok('no console errors in share-sheet session', page.__errors.length === 0, JSON.stringify(page.__errors));
+      await context.close();
+    }
+
     // ---------- JavaScript disabled: only the notice, the brand mark and the hero photo remain ----------
     for (const width of [375, 1280]) {
       const context = await browser.newContext({ viewport: { width, height: width < 700 ? 812 : 900 }, deviceScaleFactor: scale, javaScriptEnabled: false, locale: 'ja-JP' });
@@ -379,7 +490,7 @@ async function switchLang(page, lang) {
 
     // ---------- dark mode + reduced motion screenshots ----------
     for (const width of [375, 1280]) {
-      const { context, page } = await newPage(browser, { width, height: width < 700 ? 812 : 900, colorScheme: 'dark' });
+      const { context, page } = await newPage(browser, { width, height: width < 700 ? 812 : 900, colorScheme: 'dark', permissions: ['clipboard-write'] });
       await page.goto(baseUrl, { waitUntil: 'load' });
       await settle(page);
       await loadAllImages(page);
@@ -387,6 +498,14 @@ async function switchLang(page, lang) {
       const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
       report.info[`darkBodyBg${width}`] = bg;
       ok(`dark mode changes body background @${width}`, !/rgb\(255, 255, 255\)/.test(bg), bg);
+      // 深色模式的分享按鈕與狀態文字
+      await page.locator('#share-btn').scrollIntoViewIfNeeded();
+      await page.locator('#share-btn').focus();
+      await page.keyboard.press('Enter');
+      await page.waitForTimeout(600);
+      const share = await shareButtonInfo(page);
+      ok(`share status appears in dark mode @${width}`, !!share && share.statusText.length > 0 && share.statusOpacity === 1, JSON.stringify(share));
+      await page.locator('.share').screenshot({ path: path.join(outDir, `share-dark-${width}.png`) });
       ok(`no console errors dark @${width}`, page.__errors.length === 0, JSON.stringify(page.__errors));
       await context.close();
     }
