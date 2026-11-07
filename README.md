@@ -12,13 +12,14 @@ NiziU 成員 AYAKA（彩花）的非官方粉絲網站。純 HTML / CSS / JavaSc
 2. [用 GitHub Pages 發布](#用-github-pages-發布)
 3. [怎麼改內容](#怎麼改內容全部在-datajs)
 4. [換照片](#換照片)
-5. [本機預覽](#本機預覽)
-6. [測試與品質檢查](#測試與品質檢查)
-7. [安全說明摘要](#安全說明摘要)
-8. [帳號安全建議](#帳號安全建議)
-9. [第二階段改動清單](#第二階段改動清單)
-10. [第三階段改動清單（2026-11-08）](#第三階段改動清單2026-11-08)
-11. [待確認事項](#待確認事項)
+5. [視訊回憶照片](#視訊回憶照片)
+6. [本機預覽](#本機預覽)
+7. [測試與品質檢查](#測試與品質檢查)
+8. [安全說明摘要](#安全說明摘要)
+9. [帳號安全建議](#帳號安全建議)
+10. [第二階段改動清單](#第二階段改動清單)
+11. [第三階段改動清單（2026-11-08）](#第三階段改動清單2026-11-08)
+12. [待確認事項](#待確認事項)
 
 ## 檔案說明
 
@@ -27,16 +28,17 @@ NiziU 成員 AYAKA（彩花）的非官方粉絲網站。純 HTML / CSS / JavaSc
 | `index.html` | 頁面骨架。文字都不寫在這裡，由 `app.js` 從 `data.js` 填入（只有 `<title>`、分享預覽的 meta、`<noscript>` 是固定文字） |
 | `styles.css` | 樣式：白色系、手機優先、字級與留白系統、深色模式、減少動態效果、404 頁 |
 | `nojs.css` | 瀏覽器停用 JavaScript、或 `data.js` 載入失敗／有語法錯誤時載入：只留下提示、頁首圖示與主視覺照片，不顯示空白的骨架 |
-| `app.js` | 把 `data.js` 的內容畫到畫面上、語言切換、生日倒數、相簿放大檢視、WebP 圖片、分享按鈕、被 iframe 嵌入時隱藏內容、資料壞掉時退回 `nojs.css` |
+| `app.js` | 把 `data.js` 的內容畫到畫面上、語言切換、生日倒數、相簿（活動照片＋視訊回憶）放大檢視、WebP 圖片、分享按鈕、被 iframe 嵌入時隱藏內容、資料壞掉時退回 `nojs.css` |
 | **`data.js`** | **所有文字與資料都在這裡；要改內容只需改這個檔案** |
 | `countdown.js` | 生日倒數的計算（以日本時間 JST 為準，可在 Node 測試） |
 | `share.js` | 分享按鈕的純邏輯：決定分享網址（`canonical` 優先）、選擇分享方式（可在 Node 測試） |
-| `photos/` | 9 張照片（JPEG）、每張的 WebP 版本（`-480`／`-800`／`-full`）、分享預覽圖 `og.jpg`、`photos.json` |
+| `photos/` | 活動照片 `ayaka-01.jpg`～`ayaka-09.jpg`（說明在 `photos.json`）、視訊回憶 `call-01.jpg`～`call-09.jpg`（說明在 `call-photos.json`）、每張的 WebP 版本（`-480`／`-800`／`-1024`／`-full`）、分享預覽圖 `og.jpg` |
 | `favicon.svg`、`icons/` | 原創的小圖示（花朵＋彩虹）與 PNG 版本（manifest／iOS 用） |
 | `manifest.webmanifest` | 加到手機主畫面時用的設定 |
 | `404.html` | 找不到頁面時顯示 |
 | `.nojekyll` | 讓 GitHub Pages 直接發布檔案，不經 Jekyll 處理 |
-| `scripts/make_images.py` | 換照片後重新產生 WebP 與 `og.jpg` |
+| `scripts/make_images.py` | 換照片後重新產生 WebP 與 `og.jpg`（`--match 'call-*.jpg'` 可只處理某一組） |
+| `scripts/import_photos.py` | 把新照片（PNG／JPEG）裁成 4:5、去除中繼資料，存成 `photos/前綴-01.jpg`…（換照片一律先用它處理；視訊回憶照片就是這樣做的） |
 | `scripts/qa.js` | 品質檢查（headless Chromium 截圖與各項自動檢查） |
 | `test/` | `node --test` 的測試：倒數邏輯與 `data.js` 資料完整性 |
 | `package.json` | 只用來跑測試與品質檢查（網站本身不需要 npm） |
@@ -120,18 +122,34 @@ slogan: {
 
 ## 換照片
 
-1. 把新照片放進 `photos/`（建議 4:5 直式、寬度 1280px 左右，先去除 GPS 等拍攝資訊）。
-2. 在 `data.js` 的 `photos` 陣列裡改 `src`、`alt_ja`、`alt_zh`、`width`、`height`（格式和 `photos/photos.json` 一樣，可以直接複製貼上）。首頁主視覺是 `hero.photo`。
-3. 重新產生 WebP 與分享預覽圖（需要 Python 3 與 Pillow：`pip install Pillow`）：
+**新照片一律先用 `scripts/import_photos.py` 處理**：它會裁成 4:5 直式、去除 GPS／EXIF 等中繼資料，再存成 `photos/前綴-01.jpg`…。
+`node --test` 會要求相簿每張照片都剛好是 4:5（容差 0.002），自己裁的圖很容易過不了。需要 Python 3 與 Pillow（`pip install Pillow`）。
+
+1. 把新圖放在任一資料夾（檔名排序就是順序），裁切＋去除中繼資料＋產生 WebP 一次做完：
 
    ```bash
-   python3 scripts/make_images.py
+   python3 scripts/import_photos.py 來源資料夾 --prefix ayaka   # 活動照片；視訊回憶用 --prefix call
+   python3 scripts/make_images.py --match 'ayaka-*.jpg'         # 只為這一組產生 -480 / -800 / -1024 / -full.webp
    ```
 
-   這會為每張 `photos/*.jpg` 產生 `-480.webp`、`-800.webp`、`-1024.webp`、`-full.webp`，並從 `photos/ayaka-07.jpg` 裁出 `photos/og.jpg`（分享預覽圖，想換來源請改腳本裡的 `OG_SOURCE`）。
+   `import_photos.py` 預設固定上緣、只裁掉下方多餘的部分（`--anchor center` 可改成置中）。
+   `make_images.py` 會為每張照片產生 `-480.webp`、`-800.webp`、`-1024.webp`、`-full.webp`；不加 `--match` 會處理全部 `photos/*.jpg`，並從 `photos/ayaka-07.jpg` 裁出 `photos/og.jpg`（分享預覽圖，想換來源請改腳本裡的 `OG_SOURCE`）。
    暫時不想處理 WebP 的話，把 `data.js` 的 `site.webp` 改成 `false` 即可。
-4. `photos/photos.json` 是照片說明的原始檔，建議一起更新，方便之後對照。
-5. 執行 `node --test`，會檢查照片檔案與 WebP 版本是否都存在。
+2. 在 `data.js` 改照片資料：活動照片在 `photos` 陣列（`src`、`date`、`alt_ja`、`alt_zh`、`width`、`height`），視訊回憶在 `callPhotos.items`（日期是整組共用的 `callPhotos.date`）。首頁主視覺是 `hero.photo`。
+3. 對照用的原始檔也一起更新：`photos/photos.json`（活動照片）、`photos/call-photos.json`（視訊回憶，`node --test` 會檢查它和 `data.js` 的 `callPhotos` 完全一致）。
+4. 執行 `node --test`，會檢查照片檔案與 WebP 版本都存在、`width`／`height` 和 JPEG 實際尺寸一致、每張都是 4:5。
+
+## 視訊回憶照片
+
+相簿區塊的第二組「ビデオ通話の思い出／視訊回憶」：網站主人和 AYAKA 視訊時自己擷取的 9 張畫面（2026 年 10 月 8 日）。
+版面和活動照片一樣，用細線隔開並有自己的小標、日期與說明；放大檢視時在這一組裡循環（計數 1／9）。
+
+- **檔案**：`photos/call-01.jpg`～`call-09.jpg`（1204×1505，4:5 直式，已去除所有中繼資料）與各自的 `-480`／`-800`／`-1024`／`-full.webp`。
+- **說明與尺寸**：`data.js` 的 `callPhotos`（網頁實際使用）與 `photos/call-photos.json`（對照用的原始檔）兩邊形狀相同，都是 `{ "date": "2026-10-08", "items": [...] }`；
+  每張有 `src`、`alt_ja`、`alt_zh`、`width`、`height`。要改日期時兩個檔案各改一處 `date` 即可（`node --test` 會檢查兩邊完全一致）。
+- **介面文字**：`data.js` 的 `ui.galleryCallTitle`（小標）、`ui.galleryCallLead`（說明）、`ui.callPhotoCaptionDate`（每張照片下方與燈箱的日期標籤，`{date}` 會換成日期）。
+- **換照片**：照上面「換照片」的步驟，前綴用 `call`（`--prefix call`、`--match 'call-*.jpg'`）。
+- 不想顯示這一組時，把 `callPhotos.items` 清空即可，整個區塊（小標、日期、說明）會自動隱藏。
 
 ## 本機預覽
 
@@ -207,7 +225,8 @@ npm audit
 - 設計審查（`review-design` 分支 `design-review.md`，2026-11-04 結案）：最終回歸檢查全部通過，58 項中 57 項已由審查員確認修正（評分 8.5/10）；剩下的 D-32（日文圖說句尾）由網站主人決定，年表 2020 年的依據也請網站主人確認。
 - 第三方審查 R1（`review-r1.md`，R-01～R-13，評分 8.5/10）：R-01～R-07、R-09～R-13 已於 2026-11-08 修正（見下方第三階段改動清單）；R-08 評估後維持現狀。
 - 六份專家審查（日文 JA-01～07、繁體中文 ZH-01～08、視覺 V-01～09、無障礙 A-01～11、效能 P-01～05、資安 S2-01～03，2026-11-08）：除了需要網站主人決定的 ZH-01（文字部分）、V-09、A-07 與 P-03 的 GitHub Actions 之外全部修正（見下方第 16～20 項）。
-- 每次修正後都重跑 `node --test`（26 項）與 `scripts/qa.js`（228 項）確認全部通過。
+- 視訊回憶照片（`photos-a` 分支，評審 `judge-photos.md` 選定版本 A，J-02～J-10 修正後於 2026-11-08 合併進 `main`，見下方第 21 項）。
+- 每次修正後都重跑 `node --test`（29 項）與 `scripts/qa.js`（259 項）確認全部通過。
 
 ## 第三階段改動清單（2026-11-08）
 
@@ -233,6 +252,7 @@ npm audit
 18. **頁首與導覽（V-01／A-01、A-02、A-03、A-05、V-02、A-06）** 手機「只固定導覽列」的規則被後面的 `top: 0` 蓋掉，整個 112px 頁首都固定在畫面上；已改正（捲動後只剩 57px 的導覽列）。桌機導覽放不下時（放大文字間距）改為換行，不在隱藏的捲動容器裡被裁掉。七個區塊加上 `tabindex="-1"`、導覽高亮改用 `scrollTo()`：鍵盤按導覽連結後，下一個 Tab 直接進入目標區塊的第一個元件。手機導覽拿掉 `scroll-snap`、右側留出淡出遮罩的寬度，Tab 到的膠囊完整露出。語言切換的選中態改為白色（深色模式為較亮）小膠囊加淡陰影，並有 hover 顏色；Windows 高對比模式下選中的語言與目前區塊加底線、燈箱關閉鈕的 × 改用邊框畫（不會消失）。
 19. **深色光暈、個人資料、燈箱、列印（V-03、V-07、A-04、A-09、P-05）** 深色模式的主視覺光暈改用另一組較飽和的四色與較大的模糊，不再是一圈灰霧；個人資料清單的最後一條線由容器畫、每列底線重疊 1px，未確認欄位是奇數或偶數都是完整的一條線；視窗高度 480px 以下（橫向手機、400% 縮放）燈箱改為可捲動，照片不再被壓成縮圖；相簿的隱藏提示改用 `hidden`、燈箱的計數與圖說標 `aria-hidden`，螢幕閱讀器不再把同一句唸四次；新增列印樣式（不印導覽、語言鈕、CTA、光暈、分享按鈕、燈箱；相簿格、留言卡、年表項目與倒數卡不被分頁切開）。
 20. **效能、穩健性、資安（P-01～P-04、S2-01～S2-03）** 手機相簿第一張（整寬）的 `sizes` 改為 92vw，DPR 2／3 不再把 480px 的圖放大；主視覺 `sizes` 依實際欄寬（平板 360～460px、橫向手機 41vw、直向手機 `min(92vw, 40vh)`），iPad 與橫向手機不再多抓一倍大的檔案；新增 1024px 的 WebP（`scripts/make_images.py` 的 `SIZES` 加 1024，DPR 3 手機與 DPR 2 桌機的主視覺改抓它）；`data.js` 載入失敗或有語法錯誤時，`app.js` 改套 `nojs.css`，不再剩下空骨架；CSP 加上 `trusted-types 'none'`（禁止建立任何 Trusted Types 政策，`innerHTML` 的防線不能被同源程式關掉）並拿掉沒用到的 `font-src`；本機預覽指令加 `--bind 127.0.0.1`；README 不再指名 S-01 的 commit 與信箱細節。QA 由 199 項增加到 228 項，`node --test` 加檢查 `-1024.webp`。
+21. **視訊回憶照片（`photos-a` 分支合併，2026-11-08）**：相簿新增第二組「ビデオ通話の思い出／視訊回憶」（網站主人提供的 9 張視訊截圖，`photos/call-01.jpg`～`call-09.jpg`，裁成 4:5、去除中繼資料、WebP 四種尺寸、lazy loading）；小標＋日期（2026 年 10 月 8 日）＋說明、燈箱在組內循環；「關於本站」與頁尾的拍攝聲明改為同時涵蓋視訊截圖；`site.description`（`index.html` 的 description／og／twitter 同句）提到視訊回憶；新增 `scripts/import_photos.py`、`photos/call-photos.json`；`make_images.py` 加 `--match`；測試新增尺寸與 JSON 一致性檢查。評審回饋（J-02～J-10）：第二組清單加 `role="list"` 並把日期納入無障礙名稱、`items` 清空時整個區塊自動隱藏、`call-photos.json` 和 `data.js` 同為 `{ date, items }` 形狀、手機第二組第一張不全寬、日文圖說日期用「・」、「關於本站」拆成兩句。合併時（J-01）：第二組沿用 main 的相簿 `sizes`（R-13／P-01）與燈箱 `sizes`（R-09）、每格按鈕同樣只由說明命名一次（R-11，兩組的說明 id 分別為 `gallery-caption-N`／`gallery-call-caption-N`）、燈箱宣告區（R-06）改以目前的組為準，在第二組也會唸出「9枚中9枚目：…」。`scripts/qa.js` 新增第二組的 alt、燈箱（開啟、組內循環、宣告、焦點回到原格）、lazy、「只有主視覺 eager」、兩組 `sizes` 相同、說明 id 不重複、第二組燈箱的 axe 檢查（QA 由 228 項增加到 259 項，`node --test` 由 26 項增加到 29 項）。
 
 ## 待確認事項
 
@@ -242,6 +262,7 @@ npm audit
 - **應援標語與留言**：目前都是範例文字，請換成自己的話（`data.js` 的 `hero.slogan` 與 `messages`）。
 - **個人資料的「待補」欄位**：只放了確認過的資訊，其餘留待補充（年表「虹プロジェクト 最終順位8位」的年份依網站主人指示填 2020；設計審查 D-32 建議若無法確認就改回 null）。
 - **2026-08-23 的活動名稱**：年表與關於區只寫「活動」，名稱待補（`data.js` 的 `timeline` 有註解）。
+- **視訊回憶照片的說明文字**：9 張照片的中文說明直接採用網站主人的檔名（只做最小潤飾），日文說明是翻譯，請過目。
 - **照片說明的日文句型**（設計審查 D-33）：審查建議把 03／04／05／06／08 的說明統一成名詞句；因為說明是網站主人提供的，這裡沒有改，請自行決定是否採用。
 - **瀏覽器支援的小差異**：標語、各區引言、相簿說明、留言、年表註解與生日祝福的「日文在文節處換行」（`word-break: auto-phrase`）目前只有 Chrome 系瀏覽器支援，Safari／Firefox 會退回一般換行，不影響閱讀。
 - **個人資料「Nizi Project（虹プロジェクト）」的中文標籤**（ZH-01）：桌機版放不下時現在會在空格處換成兩行「Nizi Project／（虹プロジェクト）」。審查建議直接簡化成「Nizi Project」（和年表一致，日文版本來就顯示「虹プロジェクト」）；要不要拿掉括號裡的日文由網站主人決定（`data.js` 的 `profile` 第 4 筆）。
@@ -255,4 +276,4 @@ npm audit
 ## 關於
 
 - 這是非官方粉絲網站，與 NiziU 及其所屬公司無關。
-- 照片為網站主人拍攝，請勿轉載。
+- 照片與視訊截圖皆為網站主人拍攝或擷取，請勿轉載。

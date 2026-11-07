@@ -991,6 +991,8 @@ main section:focus { outline: none; }
 .gallery__caption-text { grid-column: 2; word-break: auto-phrase; }
 @media (max-width: 699px) {
   .gallery__item:first-child { grid-column: 1 / -1; }
+  /* 第二組（視訊回憶）是次級群組，第一張不全寬 */
+  #gallery-grid-call .gallery__item:first-child { grid-column: auto; }
 }
 .gallery__date {
   display: block;
@@ -999,6 +1001,9 @@ main section:focus { outline: none; }
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.04em;
+  /* 手機的半寬格子放不下「2026年10月8日・ビデオ通話」時，只在「・」或空格處折行，不折出孤字 */
+  word-break: keep-all;
+  overflow-wrap: anywhere;
 }
 
 @media (hover: hover) {
@@ -1010,6 +1015,51 @@ main section:focus { outline: none; }
 }
 @media (min-width: 700px) {
   .gallery { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4) 20px; }
+}
+
+/* 相簿的第二組（視訊回憶）：細線隔開、小標＋日期，格子樣式和第一組相同 */
+.gallery-group {
+  margin-top: var(--space-6);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--line);
+}
+.gallery-group__head { margin-bottom: var(--space-4); }
+.gallery-group__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) 0.9em;
+}
+.gallery-group__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75em;
+  font-size: var(--step-1);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+}
+.gallery-group__title::before {
+  content: "";
+  flex: 0 0 auto;
+  width: var(--dash-w); height: 2px;
+  border-radius: 2px;
+  background: var(--rainbow);
+}
+.gallery-group__date {
+  font-size: var(--step--1);
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+.gallery-group__lead {
+  margin-top: var(--space-1);
+  color: var(--text-muted);
+  font-size: var(--step--1);
+  max-width: var(--measure);
+}
+@media (min-width: 900px) {
+  .gallery-group { margin-top: var(--space-7); padding-top: var(--space-6); }
 }
 
 /* ---------- 燈箱 ---------- */

@@ -1,0 +1,14 @@
+{
+  "date": "2026-10-08",
+  "items": [
+    { "src": "photos/call-01.jpg", "alt_ja": "親指を立てて笑顔", "alt_zh": "比讚的笑容", "width": 1204, "height": 1505 },
+    { "src": "photos/call-02.jpg", "alt_ja": "首をかしげて笑う", "alt_zh": "歪頭笑", "width": 1204, "height": 1505 },
+    { "src": "photos/call-03.jpg", "alt_ja": "真剣な表情", "alt_zh": "認真的表情", "width": 1204, "height": 1505 },
+    { "src": "photos/call-04.jpg", "alt_ja": "両手を組んで", "alt_zh": "雙手交握", "width": 1204, "height": 1505 },
+    { "src": "photos/call-05.jpg", "alt_ja": "両手で親指を立てて", "alt_zh": "雙手比讚", "width": 1204, "height": 1505 },
+    { "src": "photos/call-06.jpg", "alt_ja": "微笑み", "alt_zh": "微笑", "width": 1204, "height": 1505 },
+    { "src": "photos/call-07.jpg", "alt_ja": "頬杖をついた笑顔", "alt_zh": "托腮的笑容", "width": 1204, "height": 1505 },
+    { "src": "photos/call-08.jpg", "alt_ja": "目を細めて笑う", "alt_zh": "笑得眼睛彎彎", "width": 1204, "height": 1505 },
+    { "src": "photos/call-09.jpg", "alt_ja": "両手でハート", "alt_zh": "雙手比愛心", "width": 1204, "height": 1505 }
+  ]
+}

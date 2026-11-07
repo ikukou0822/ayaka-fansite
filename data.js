@@ -25,8 +25,8 @@ window.SITE_DATA = {
       zh: 'AYAKA（彩花）非官方應援網站｜NiziU'
     },
     description: {
-      ja: 'NiziU AYAKA（彩花）の非公式応援サイト。プロフィール、バースデーカウントダウン、ヒストリー、フォト、応援メッセージ。',
-      zh: 'NiziU 成員 AYAKA（彩花）的非官方應援網站：個人資料、生日倒數、年表、相簿與應援留言。'
+      ja: 'NiziU AYAKA（彩花）の非公式応援サイト。プロフィール、バースデーカウントダウン、ヒストリー、フォト、ビデオ通話の思い出、応援メッセージ。',
+      zh: 'NiziU 成員 AYAKA（彩花）的非官方應援網站：個人資料、生日倒數、年表、相簿、視訊回憶與應援留言。'
     }
   },
 
@@ -96,8 +96,12 @@ window.SITE_DATA = {
     timelinePlaceholder: { ja: 'これからの出来事は、確認でき次第ここに追加します。', zh: '之後的事件會在確認後陸續補上。' },
 
     galleryTitle:    { ja: 'フォト', zh: '相簿' },
-    galleryLead:     { ja: '2026年8月23日、イベント会場で撮影した写真です。写真を選ぶと大きく表示できます。', zh: '2026 年 8 月 23 日在活動現場拍攝的照片，點選照片就能放大瀏覽。' },
+    galleryLead:     { ja: '2026年8月23日にイベント会場で撮影した写真と、ビデオ通話の思い出です。写真を選ぶと大きく表示できます。', zh: '2026 年 8 月 23 日在活動現場拍攝的照片，以及視訊時留下的回憶。點選照片就能放大瀏覽。' },
     galleryOpen:     { ja: '写真を拡大表示', zh: '放大檢視照片' },
+    // 相簿第二組：視訊回憶（照片資料在下面的 callPhotos）
+    galleryCallTitle: { ja: 'ビデオ通話の思い出', zh: '視訊回憶' },
+    galleryCallLead: { ja: 'ビデオ通話のときの画面を、サイト管理人が保存したものです。', zh: '網站主人在視訊時擷取的畫面。' },
+    callPhotoCaptionDate: { ja: '{date}・ビデオ通話', zh: '{date} 視訊截圖' },
     lightboxLabel:   { ja: '写真の拡大表示', zh: '照片放大檢視' },
     lightboxClose:   { ja: '閉じる', zh: '關閉' },
     lightboxPrev:    { ja: '前の写真', zh: '上一張' },
@@ -199,6 +203,25 @@ window.SITE_DATA = {
     { src: 'photos/ayaka-09.jpg', date: '2026-08-23', alt_ja: '花の猫耳カチューシャ', alt_zh: '戴著花朵貓耳髮箍', width: 1280, height: 1600 }
   ],
 
+  /* ---------- 相簿第二組：視訊回憶 ----------
+     網站主人和 AYAKA 視訊時自己擷取的畫面（photos/call-01.jpg～call-09.jpg，格式和 photos/call-photos.json 相同）。
+     date 是整組共用的日期（'YYYY-MM-DD'；只知道月份時可寫 'YYYY-MM'）；每張沒有自己的 date 時就用這個。
+     items 清空時，網頁會自動隱藏整個「視訊回憶」區塊。 */
+  callPhotos: {
+    date: '2026-10-08',
+    items: [
+      { src: 'photos/call-01.jpg', alt_ja: '親指を立てて笑顔', alt_zh: '比讚的笑容', width: 1204, height: 1505 },
+      { src: 'photos/call-02.jpg', alt_ja: '首をかしげて笑う', alt_zh: '歪頭笑', width: 1204, height: 1505 },
+      { src: 'photos/call-03.jpg', alt_ja: '真剣な表情', alt_zh: '認真的表情', width: 1204, height: 1505 },
+      { src: 'photos/call-04.jpg', alt_ja: '両手を組んで', alt_zh: '雙手交握', width: 1204, height: 1505 },
+      { src: 'photos/call-05.jpg', alt_ja: '両手で親指を立てて', alt_zh: '雙手比讚', width: 1204, height: 1505 },
+      { src: 'photos/call-06.jpg', alt_ja: '微笑み', alt_zh: '微笑', width: 1204, height: 1505 },
+      { src: 'photos/call-07.jpg', alt_ja: '頬杖をついた笑顔', alt_zh: '托腮的笑容', width: 1204, height: 1505 },
+      { src: 'photos/call-08.jpg', alt_ja: '目を細めて笑う', alt_zh: '笑得眼睛彎彎', width: 1204, height: 1505 },
+      { src: 'photos/call-09.jpg', alt_ja: '両手でハート', alt_zh: '雙手比愛心', width: 1204, height: 1505 }
+    ]
+  },
+
   /* ---------- 應援留言 ----------
      ★ 以下都是範例文字，請換成自己的話。可以增減筆數。 */
   messages: [
@@ -228,8 +251,8 @@ window.SITE_DATA = {
         zh: '這是一位 WithU（NiziU 粉絲）個人經營的非官方應援網站，與 NiziU 及其所屬公司完全無關。'
       },
       {
-        ja: '掲載している写真はすべて、2026年8月23日のイベント会場でサイト管理人が撮影したものです。写真・文章の無断転載はご遠慮ください。',
-        zh: '網站上的照片都是網站主人 2026 年 8 月 23 日在活動現場親自拍攝的，照片與文字請勿擅自轉載。'
+        ja: '掲載している写真は、2026年8月23日のイベント会場でサイト管理人が撮影したものです。ビデオ通話の画面は、通話のときにサイト管理人が保存したものです。写真・文章の無断転載はご遠慮ください。',
+        zh: '網站上的照片，都是網站主人 2026 年 8 月 23 日在活動現場親自拍攝的。視訊畫面則是視訊時由網站主人自行擷取的。照片與文字請勿擅自轉載。'
       },
       {
         ja: 'プロフィールやヒストリーは、確認できた情報だけを載せています。確認でき次第、少しずつ書き足していきます。',
@@ -245,8 +268,8 @@ window.SITE_DATA = {
       zh: '非官方粉絲網站，與 NiziU 及其所屬公司無關。'
     },
     photoNotice: {
-      ja: '写真はサイト管理人が撮影したものです。無断転載はご遠慮ください。',
-      zh: '照片為網站主人拍攝，請勿轉載。'
+      ja: '写真とビデオ通話のスクリーンショットは、サイト管理人が撮影・保存したものです。無断転載はご遠慮ください。',
+      zh: '照片與視訊截圖皆為網站主人拍攝或擷取，請勿轉載。'
     }
   }
 };
