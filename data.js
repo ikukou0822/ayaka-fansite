@@ -25,8 +25,8 @@ window.SITE_DATA = {
       zh: 'AYAKA（彩花）非官方應援網站｜NiziU'
     },
     description: {
-      ja: 'NiziUのAYAKA（彩花）を応援する非公式応援サイト。プロフィール、バースデーカウントダウン、ヒストリー、フォト、応援メッセージ。',
-      zh: '應援 NiziU 成員 AYAKA（彩花）的非官方應援網站：個人資料、生日倒數、年表、相簿與應援留言。'
+      ja: 'NiziU AYAKA（彩花）の非公式応援サイト。プロフィール、バースデーカウントダウン、ヒストリー、フォト、応援メッセージ。',
+      zh: 'NiziU 成員 AYAKA（彩花）的非官方應援網站：個人資料、生日倒數、年表、相簿與應援留言。'
     }
   },
 
@@ -87,7 +87,7 @@ window.SITE_DATA = {
     unitMinutes:     { ja: '分', zh: '分鐘' },
     unitSeconds:     { ja: '秒', zh: '秒' },
     birthdayToday:   { ja: 'AYAKAちゃん、お誕生日おめでとう！', zh: 'AYAKA，生日快樂！' },
-    birthdayTodayLead: { ja: '今日は{age}歳の誕生日。素敵な一年になりますように。', zh: '今天是 {age} 歲生日，祝妳擁有美好的一年。' },
+    birthdayTodayLead: { ja: '今日は{age}歳のお誕生日。素敵な一年になりますように。', zh: '今天是 {age} 歲生日，祝妳擁有美好的一年。' },
     countdownLabel:  { ja: '誕生日までの残り時間', zh: '距離生日的剩餘時間' },
 
     timelineTitle:   { ja: 'ヒストリー', zh: '年表' },
@@ -96,7 +96,7 @@ window.SITE_DATA = {
     timelinePlaceholder: { ja: 'これからの出来事は、確認でき次第ここに追加します。', zh: '之後的事件會在確認後陸續補上。' },
 
     galleryTitle:    { ja: 'フォト', zh: '相簿' },
-    galleryLead:     { ja: '2026年8月23日、イベント会場で撮影した写真です。写真を選ぶと大きく表示できます。', zh: '2026 年 8 月 23 日在活動現場拍攝的照片，點一下可以放大瀏覽。' },
+    galleryLead:     { ja: '2026年8月23日、イベント会場で撮影した写真です。写真を選ぶと大きく表示できます。', zh: '2026 年 8 月 23 日在活動現場拍攝的照片，點選照片就能放大瀏覽。' },
     galleryOpen:     { ja: '写真を拡大表示', zh: '放大檢視照片' },
     lightboxLabel:   { ja: '写真の拡大表示', zh: '照片放大檢視' },
     lightboxClose:   { ja: '閉じる', zh: '關閉' },
@@ -105,7 +105,7 @@ window.SITE_DATA = {
     lightboxCounter: { ja: '{current} / {total}', zh: '{current} / {total}' },
     // 切換照片時唸給螢幕閱讀器聽的句子（畫面上看不到）
     lightboxAnnounce: { ja: '{total}枚中{current}枚目：{caption}', zh: '第 {current} 張，共 {total} 張：{caption}' },
-    lightboxHint:    { ja: '← → で切り替え、Esc で閉じる', zh: '← → 切換，Esc 關閉' },
+    lightboxHint:    { ja: '← →キーで切り替え、Escキーで閉じる', zh: '← → 切換，Esc 關閉' },
     lightboxHintTouch: { ja: 'スワイプで切り替え、写真の外をタップで閉じる', zh: '左右滑動切換，點照片外側關閉' },
 
     messagesTitle:   { ja: 'メッセージ', zh: '應援留言' },
@@ -119,22 +119,22 @@ window.SITE_DATA = {
     // shareCopied 是複製成功後顯示幾秒的提示；shareCopyManual 是無法複製時顯示在網址前面的說明。
     shareLead:       { ja: 'このサイトを気に入っていただけたら、ぜひシェアしてください。', zh: '喜歡這個網站的話，歡迎分享給朋友。' },
     shareButton:     { ja: 'このサイトをシェア', zh: '分享這個網站' },
-    shareText:       { ja: 'NiziUのAYAKA（彩花）を応援する非公式応援サイトです。', zh: '應援 NiziU 成員 AYAKA（彩花）的非官方應援網站。' },
+    shareText:       { ja: 'NiziU AYAKA（彩花）の非公式応援サイトです。', zh: 'NiziU 成員 AYAKA（彩花）的非官方應援網站。' },
     shareCopied:     { ja: 'URLをコピーしました', zh: '已複製網址' },
     shareCopyManual: { ja: 'コピーできませんでした。こちらのURLをお使いください：', zh: '無法自動複製，請手動複製這個網址：' },
 
     footerUpdated:   { ja: '最終更新：{date}', zh: '最後更新：{date}' },
     noscript:        { ja: 'このサイトはJavaScriptを使用しています。ブラウザのJavaScriptを有効にしてご覧ください。', zh: '本網站需要啟用 JavaScript 才能正常顯示。' },
     photoCaptionDate: { ja: '{date} 撮影', zh: '攝於 {date}' },
-    framedNotice:    { ja: 'このページは別のサイトに埋め込まれています。', zh: '本頁被嵌入在其他網站中。' },
-    framedOpen:      { ja: 'AYAKA応援サイトを開く', zh: '開啟網站' }
+    framedNotice:    { ja: 'このページは別のサイトに埋め込まれています。', zh: '這個頁面被嵌入在其他網站裡。' },
+    framedOpen:      { ja: 'AYAKA応援サイトを開く', zh: '開啟 AYAKA 應援網站' }
   },
 
   /* ---------- 個人資料 ----------
      value 為 null 時會顯示「準備中／待補」。確認之後再填入 { ja: '…', zh: '…' }。 */
   profile: [
     { label: { ja: '名前',      zh: '藝名' },     value: { ja: 'AYAKA（彩花）', zh: 'AYAKA（彩花）' } },
-    { label: { ja: '本名',      zh: '本名' },     value: { ja: '新井 彩花', zh: '新井彩花' } },
+    { label: { ja: '本名',      zh: '本名' },     value: { ja: '新井　彩花', zh: '新井彩花' } },
     { label: { ja: '生年月日',  zh: '出生日期' }, value: { ja: '2003年6月20日', zh: '2003 年 6 月 20 日' }, showAge: true },
     { label: { ja: '虹プロジェクト', zh: 'Nizi Project（虹プロジェクト）' }, value: { ja: '最終順位8位', zh: '最終排名第 8\u00a0名' } },
     { label: { ja: 'デビュー',  zh: '出道' },     value: { ja: '2020年12月、シングル「Step and a step」でNiziUとして正式デビュー', zh: '2020 年 12 月以單曲〈Step and a step〉隨 NiziU 正式出道' } },
@@ -152,7 +152,7 @@ window.SITE_DATA = {
     {
       date: '2003-06-20',
       title: { ja: '誕生', zh: '出生' },
-      note:  { ja: '本名は新井 彩花。', zh: '本名新井彩花。' }
+      note:  { ja: '本名は新井彩花。', zh: '本名新井彩花。' }
     },
     {
       date: '2020',   // 年份依網站主人指示填入（最終順位是 2020 年決定的）
@@ -173,7 +173,7 @@ window.SITE_DATA = {
       date: '2026-08-23',
       // ★ 活動名稱還沒確認，確認後請把下面的「イベント名：確認中／活動名稱：待補」換成正式名稱
       title: { ja: 'サイト管理人がイベントに参加', zh: '網站主人參加活動' },
-      note:  { ja: 'イベント名：確認中。フォトの写真は、この日にサイト管理人が撮影したものです。', zh: '活動名稱：待補。相簿裡的照片都是網站主人這一天拍的。' }
+      note:  { ja: 'イベント名：確認中。「フォト」に掲載している写真は、この日にサイト管理人が撮影したものです。', zh: '活動名稱：待補。相簿裡的照片都攝於這一天。' }
     },
     { placeholder: true }
     /* 新增範例：
@@ -233,7 +233,7 @@ window.SITE_DATA = {
       },
       {
         ja: 'プロフィールやヒストリーは、確認できた情報だけを載せています。確認でき次第、少しずつ書き足していきます。',
-        zh: '個人資料與年表只放已經確認的資訊，確認後會再慢慢補上。'
+        zh: '個人資料與年表只放已經確認的資訊，其餘會在確認後慢慢補上。'
       }
     ]
   },

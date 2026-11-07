@@ -127,6 +127,9 @@ async function checkShareButton(page, width, lang) {
 async function switchLang(page, lang) {
   const label = lang === 'zh' ? '繁體中文' : '日本語';
   const btn = page.locator('button', { hasText: label }).first();
+  // 手機捲動後品牌列（含語言鈕）會捲走、只剩導覽列固定，所以先回到頁面最上方再點
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+  await page.waitForTimeout(100);
   await btn.click();
   await page.waitForTimeout(300);
 }
