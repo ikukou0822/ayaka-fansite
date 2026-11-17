@@ -1,0 +1,8 @@
+{
+  // 只給測試用：開一個本機的 D1 資料庫，直接測 shared/store.js（不經過 HTTP）。不會部署到任何地方
+  "name": "store-test",
+  "compatibility_date": "2026-09-01",
+  "d1_databases": [
+    { "binding": "DB", "database_name": "store-test", "database_id": "00000000-0000-0000-0000-000000000000" }
+  ]
+}

@@ -1,6 +1,7 @@
 /* =====================================================================
    styles.css — AYAKA（彩花）非官方應援網站
    白色系、溫柔乾淨；手機優先；深色模式另外調色；只有首頁主視覺有一段開場動畫。
+   設計上的約定（為什麼這樣排）寫在 DESIGN.md。
    ===================================================================== */
 
 /* ---------- 設計變數 ---------- */
@@ -20,17 +21,29 @@
   --accent-strong: #a03f5c;   /* 文字、連結、focus（白底 6.3:1、淡粉底 5.5:1） */
   --accent-soft: #fbeef2;
   --focus: #a03f5c;
-  --header-bg: rgba(255, 255, 255, 0.86);
-  --badge-bg: rgba(255, 255, 255, 0.84);
-  --badge-text: #5c5560;
-  --lightbox-bg: rgba(26, 20, 24, 0.94);
+  /* 燈箱：不透明的深色底（後面的頁面不會透出來），上面是白字與半透明白 */
+  --lightbox-bg: #1b1519;
+  --lightbox-fg: #fff;
+  --lightbox-fg-2: rgba(255, 255, 255, 0.78);   /* 張數 */
+  --lightbox-fg-3: rgba(255, 255, 255, 0.62);   /* 日期、操作提示 */
+  --lightbox-line: rgba(255, 255, 255, 0.45);
+  --lightbox-btn: rgba(255, 255, 255, 0.16);
+  --lightbox-btn-hover: rgba(255, 255, 255, 0.22);
+  --lightbox-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   --shadow-sm: 0 1px 2px rgba(70, 40, 52, 0.06), 0 4px 12px rgba(70, 40, 52, 0.06);
   --shadow-md: 0 2px 6px rgba(70, 40, 52, 0.06), 0 18px 40px rgba(70, 40, 52, 0.12);
   --lang-on-bg: var(--surface);   /* 語言切換選中態的底色 */
-  --glow-opacity: 0.9;
 
-  /* 「虹」點綴：細緻的粉彩漸層 */
+  /* 「虹」點綴：細緻的粉彩漸層。只用在少數幾處：頁首頂端的細線、主視覺標語上方、頁尾字標下方、
+     信的開頭與結尾、404 頁（見 DESIGN.md） */
   --rainbow: linear-gradient(90deg, #f6b9c7 0%, #f9d5aa 20%, #f4e9b3 40%, #c2e5cc 60%, #b9d8f2 80%, #d0c3ec 100%);
+
+  /* 「給彩花的信」（letter.html）與首頁入口小卡：和紙般的淡色便箋、細的界線、明朝體（系統字型，不載入外部字型） */
+  --paper: #fbf8f2;
+  --paper-line: #e4dcd0;
+  --paper-line-2: #ede7dc;
+  --font-letter: "Hiragino Mincho ProN", "Hiragino Mincho Pro", "Yu Mincho", YuMincho, "Noto Serif CJK JP", "Noto Serif JP",
+                 "Source Han Serif JP", "MS PMincho", serif;
 
   /* 字型：系統字型堆疊（日文優先，繁中也能正常顯示） */
   --font: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic Medium", "Yu Gothic", Meiryo,
@@ -56,7 +69,7 @@
   --space-6: 3rem;
   --space-7: 4.5rem;
 
-  --dash-w: 32px;          /* 彩虹短線的長度（eyebrow、標語、頁尾共用） */
+  --dash-w: 32px;          /* 彩虹短線的長度（標語、頁尾、信共用） */
   --gutter: 16px;
   --content: 1080px;
   --measure: 38em;
@@ -80,15 +93,14 @@
     --accent-strong: #eaa8bb;
     --accent-soft: #342a31;
     --focus: #f0b7c8;
-    --header-bg: rgba(26, 23, 28, 0.84);
-    --badge-bg: rgba(26, 23, 28, 0.72);
-    --badge-text: #ece6e9;
-    --lightbox-bg: rgba(12, 10, 13, 0.96);
+    --lightbox-bg: #0d0b0e;
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.25);
     --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.3), 0 18px 40px rgba(0, 0, 0, 0.4);
     --lang-on-bg: #3b3341;
-    --glow-opacity: 0.5;
     --rainbow: linear-gradient(90deg, #d79aa9 0%, #d9b98f 20%, #d2c98f 40%, #9ec7ad 60%, #94b8d6 80%, #ad9fd2 100%);
+    --paper: #2a2630;
+    --paper-line: #463e4d;
+    --paper-line-2: #3a3340;
   }
   .hero__img, .gallery__img { filter: brightness(0.9) contrast(1.02); }
   .lightbox__img { filter: none; }
@@ -98,6 +110,8 @@
 :root:lang(zh-Hant) {
   --font: "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", "Noto Sans CJK TC",
           "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+  --font-letter: "Noto Serif CJK TC", "Noto Serif TC", "Source Han Serif TC", "Songti TC", PMingLiU,
+                 "Hiragino Mincho ProN", "Yu Mincho", serif;
 }
 
 @media (min-width: 900px) {
@@ -134,7 +148,6 @@ body {
   line-break: strict;        /* 日文行頭禁則：小書き假名（ゃ・ょ）與「ー」不放在行首 */
   font-feature-settings: "palt";
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
 }
 
 body.is-locked { overflow: hidden; }
@@ -224,10 +237,17 @@ main a, main button { scroll-margin-top: calc(var(--header-h) + 16px); }
 .hero__eyebrow:empty { min-width: 14em; min-height: 1.8em; }
 .hero__name-latin:empty { min-height: 0.95em; }
 .hero__name-kanji:empty { min-height: 1em; }
-.hero__slogan:empty { min-height: calc(1.9em + var(--space-3)); }   /* 一行 ＋ 標語上方的 padding（border-box 會把 padding 算進 min-height） */
-.hero__caption:empty { min-height: 1.6em; }   /* 平板以上日期標籤在照片下方，填入前先佔一行，下面的區塊才不會往下跳 */
+.hero__slogan:empty { min-height: calc(5.7em + var(--space-3)); }   /* 手機三行（行高 1.9）＋ 標語上方的 padding（border-box 會把 padding 算進 min-height）；平板三行、桌機兩行，見下方 */
+.hero__caption:empty { min-height: 1.6em; }   /* 日期在照片下方，填入前先佔一行，下面的文字才不會往下跳 */
 .section__title:empty { min-height: 1.3em; }
 .section__lead:empty { min-height: 1.8em; }
+/* 個人資料的清單填入前先佔一段高度（比實際略矮）：否則平板直向（768×1024）第一次繪製時，下一區的淡粉色底
+   會先出現在畫面底部，資料填入後再被推出畫面（CLS 0.07～0.09 → 0.01 以下） */
+.profile:empty { min-height: 28rem; }
+.block__title:empty { min-height: 1.4em; }
+.block__lead:empty { min-height: 1.8em; }
+.sources__summary:empty { min-width: 4em; }
+.links__title:empty { min-height: 1.5em; }
 .share__lead:empty { min-height: 1.8em; }
 .share__label:empty { min-width: 8em; }
 
@@ -236,9 +256,7 @@ main a, main button { scroll-margin-top: calc(var(--header-h) + 16px); }
   position: sticky;
   top: 0;
   z-index: 50;
-  background: var(--header-bg);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
+  background: var(--bg);
   border-bottom: 1px solid var(--line);
 }
 @media (max-width: 899px) {
@@ -271,6 +289,7 @@ main a, main button { scroll-margin-top: calc(var(--header-h) + 16px); }
   color: var(--text);
   padding: 8px 0;
 }
+.brand { min-height: calc(var(--step-1) * 1.8 + 16px); }   /* 字標填入前就佔好一行的高度（手機的品牌列不會在填入時長高 8px） */
 .brand:focus-visible { outline-offset: 0; }   /* 手機上品牌連結貼著視窗上緣，焦點框不外推才不會被切掉 */
 .brand__mark { width: 22px; height: 22px; flex: 0 0 auto; align-self: center; }
 .brand__name {
@@ -320,38 +339,47 @@ main a, main button { scroll-margin-top: calc(var(--header-h) + 16px); }
 @media (max-width: 299px) {
   .site-header { top: calc(-1 * (var(--header-h) - 10px)); }   /* 字標縮小後頁首矮 5px，固定的導覽列位置跟著調 */
   .site-header__inner { gap: var(--space-2); }
+  .brand { min-height: calc(var(--step-0) * 1.8 + 16px); }
   .brand__name { font-size: var(--step-0); letter-spacing: 0.14em; }
   .lang-switch__btn { padding: 0 8px; }
 }
 
-.site-nav { flex-basis: 100%; min-width: 0; margin: 0 calc(var(--gutter) * -1) 0; position: relative; }
+.site-nav {
+  /* 手機：導覽列左右都貼齊視窗邊緣（寬度要加回兩側的負邊界，否則右邊會短少一個 gutter×2） */
+  flex-basis: calc(100% + 2 * var(--gutter));
+  min-width: 0;
+  margin: 0 calc(var(--gutter) * -1) 0;
+  position: relative;
+}
 .site-nav::after {
   content: "";
   position: absolute;
   top: 0; right: 0; bottom: 10px;
   width: 48px;
-  background: linear-gradient(90deg, transparent, var(--header-bg));
+  background: linear-gradient(90deg, transparent, var(--bg));
   pointer-events: none;
 }
 .site-nav__list {
   display: flex;
-  gap: 8px;
+  gap: var(--space-1);
   overflow-x: auto;
-  padding: 6px var(--gutter) 10px;   /* 上方留 6px，膠囊的焦點框才不會被捲動容器裁掉 */
+  /* 上方留 6px，焦點框才不會被捲動容器裁掉；左邊扣掉連結自己的內距，第一項的字對齊版面左緣；
+     右邊留出淡出遮罩的寬度，捲到底時最後一項不會停在遮罩底下 */
+  padding: 6px 48px 10px calc(var(--gutter) - 13px);
   margin-top: -6px;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
-  scroll-padding-inline: var(--gutter) 56px;   /* 右側留出淡出遮罩的寬度，鍵盤焦點捲進來時膠囊完整露出 */
+  scroll-padding-inline: var(--gutter) 56px;   /* 右側留出淡出遮罩的寬度，鍵盤焦點捲進來時連結完整露出 */
 }
 .site-nav__list::-webkit-scrollbar { display: none; }
 .site-nav__list a {
   display: inline-flex;
   align-items: center;
+  vertical-align: top;   /* 文字填入前（空的連結）和填入後這一列都是 40px 高；沒有這行，空的時候會多出基線以下的 8px */
   min-height: 40px;
   white-space: nowrap;
-  padding: 0 14px;
-  border: 1px solid var(--line);
-  background: var(--surface);
+  padding: 0 12px;
+  border: 1px solid transparent;   /* 透明邊框：Windows 高對比模式下仍看得出範圍 */
   border-radius: 999px;
   color: var(--text-muted);
   text-decoration: none;
@@ -359,7 +387,7 @@ main a, main button { scroll-margin-top: calc(var(--header-h) + 16px); }
   line-height: 1.4;
 }
 .site-nav__list a:hover { background: var(--accent-soft); color: var(--accent-strong); }
-.site-nav__list a[aria-current="true"] { background: var(--accent-soft); color: var(--accent-strong); border-color: transparent; }
+.site-nav__list a[aria-current="true"] { background: var(--accent-soft); color: var(--accent-strong); }
 
 @media (min-width: 900px) {
   .site-header__inner { flex-wrap: nowrap; }
@@ -367,135 +395,75 @@ main a, main button { scroll-margin-top: calc(var(--header-h) + 16px); }
   .site-nav::after { display: none; }
   /* 桌機導覽放不下時（例如放大文字間距）換行，不在看不見的捲動容器裡被裁掉 */
   .site-nav__list { padding: 0; margin-top: 0; gap: 4px; flex-wrap: wrap; overflow: visible; justify-content: flex-end; }
-  .site-nav__list a { min-height: 36px; padding: 0 12px; border-color: transparent; background: transparent; }
+  .site-nav__list a { min-height: 36px; }
   /* hover 用淡灰底，和「目前區塊」的粉色膠囊分得開 */
   .site-nav__list a:hover { background: var(--surface-2); color: var(--text); }
   .site-nav__list a[aria-current="true"]:hover { background: var(--accent-soft); color: var(--accent-strong); }
   .brand__sub { white-space: nowrap; }
   .lang-switch { order: 3; margin-left: var(--space-3); }
   .lang-switch__btn { min-height: 32px; padding: 0 10px; white-space: nowrap; }
-  /* 文字填入前的空膠囊：桌機預留 4.5em 就夠（填入後最窄 49px、最寬 140px）；
-     7em 會讓六顆空膠囊換行、頁首先變高再縮回（CLS） */
+  /* 文字填入前的空膠囊：桌機預留 4.5em 就夠（填入後最窄 44px、最寬 136px）；
+     7em 會讓七顆空膠囊換行、頁首先變高再縮回（CLS） */
   .site-nav__list a:empty { min-width: 4.5em; }
 }
-/* 900～1099px（iPad 橫向等）：單列頁首放不下日文導覽六項時，先收掉副標、縮小導覽字級 */
+/* 900～1099px（iPad 橫向等）：單列頁首放不下日文導覽七項，收掉副標、縮小導覽字級與內距、語言鈕靠近一點
+   （900px 時可用寬度約 542px，七項約 509px） */
 @media (min-width: 900px) and (max-width: 1099px) {
   .brand__sub { display: none; }
   .site-nav__list { gap: 0; }
-  .site-nav__list a { padding: 0 8px; font-size: var(--step--2); }
+  .site-nav__list a { padding: 0 6px; font-size: var(--step--2); }
+  .lang-switch { margin-left: var(--space-2); }
+}
+/* 1100px 以上：有導覽列的頁面（首頁）不顯示副標「非公式応援サイト」，七項導覽才能維持原本的字級與內距排成一列
+   （同一句話在主視覺第一行、頁尾與「關於本站」都有）。沒有導覽列的信頁照常顯示副標。 */
+@media (min-width: 1100px) {
+  .site-header--nav .brand__sub { display: none; }
 }
 
-/* ---------- 首頁主視覺 ---------- */
-.hero {
-  position: relative;
-  overflow: hidden;
-  padding: var(--space-3) 0 var(--space-6);
-}
+/* ---------- 首頁主視覺 ----------
+   照片（網站主人自己拍的）和名字是主角；照片不加光暈、不加陰影，日期用一般的小字寫在照片下方。
+   標語是「給彩花的信」的第一句；字體和全站一樣用黑體（網站主人比較喜歡原本的字體）。 */
+.hero { padding: var(--space-3) 0 var(--space-6); }
 .hero__inner {
   max-width: var(--content);
   margin: 0 auto;
   padding: 0 var(--gutter);
   display: grid;
-  gap: var(--space-4);
+  gap: var(--space-3);
 }
-.hero__text {
-  order: 2;
-  position: relative;
-  z-index: 1;
-  margin-top: -52px;
-  margin-right: 28px;
-  padding: 12px var(--space-3) 0 0;
-  background: var(--bg);
-  border-top-right-radius: var(--radius);
-}
-.hero__figure { order: 1; position: relative; }
+.hero__text { order: 2; }
+.hero__figure { order: 1; }
 
-.hero__glow {
-  position: absolute;
-  inset: -12% max(-18%, calc(-1 * var(--gutter)));
-  background:
-    radial-gradient(45% 40% at 20% 25%, rgba(246, 185, 199, var(--glow-opacity)), transparent 60%),
-    radial-gradient(40% 36% at 80% 20%, rgba(185, 216, 242, var(--glow-opacity)), transparent 60%),
-    radial-gradient(45% 40% at 70% 85%, rgba(208, 195, 236, var(--glow-opacity)), transparent 60%),
-    radial-gradient(40% 36% at 20% 80%, rgba(244, 233, 179, var(--glow-opacity)), transparent 60%);
-  filter: blur(28px);
-  opacity: 0.8;
-  pointer-events: none;
-}
-@media (prefers-color-scheme: dark) {
-  /* 深色模式的主視覺光暈：用飽和度較高、明度較低的四色，模糊放大；
-     淺色的粉彩只降透明度疊在深底上會變成一圈灰霧。
-     這段必須寫在上面的 .hero__glow 之後（同一個選擇器、同樣的特異度），否則會被蓋掉 */
-  .hero__glow {
-    background:
-      radial-gradient(45% 40% at 20% 25%, rgba(214, 110, 150, var(--glow-opacity)), transparent 60%),
-      radial-gradient(40% 36% at 80% 20%, rgba(100, 150, 220, var(--glow-opacity)), transparent 60%),
-      radial-gradient(45% 40% at 70% 85%, rgba(150, 115, 220, var(--glow-opacity)), transparent 60%),
-      radial-gradient(40% 36% at 20% 80%, rgba(220, 180, 90, var(--glow-opacity)), transparent 60%);
-    filter: blur(40px);
-    opacity: 0.6;
-  }
-}
 .hero__frame {
-  position: relative;
+  width: 100%;               /* 寬度固定佔滿欄位：高度被 max-height 限制時，照片改成裁切，不會縮窄而和下方的日期、文字對不齊 */
   aspect-ratio: 4 / 5;
-  max-height: 50vh;          /* 矮一點的手機也能在第一屏看到名字與按鈕 */
+  max-height: 48vh;          /* 矮一點的手機（320×568）也能在第一屏看到照片和名字 */
   border-radius: var(--radius);
   overflow: hidden;
   background: var(--surface-2);
-  box-shadow: var(--shadow-md);
 }
 .hero__img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 22%; }
-.hero__cta .link-arrow {
-  min-height: 44px;
-  padding: 0 20px;
-  border: 1px solid var(--line-strong);
-  border-radius: 999px;
-  background: var(--surface);
-  font-size: var(--step--1);
-  transition: background 0.2s ease, border-color 0.2s ease;
-}
-.hero__cta .link-arrow:hover { background: var(--accent-soft); border-color: var(--accent); text-decoration: none; }
-@media (max-width: 719px) {
-  .hero__cta .link-arrow { font-size: var(--step-0); }
-}
 .hero__caption {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 1;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: var(--badge-bg);
-  color: var(--badge-text);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
+  margin-top: var(--space-2);
+  color: var(--text-muted);
   font-size: var(--step--2);
-  letter-spacing: 0.04em;
   font-variant-numeric: tabular-nums;
   line-height: 1.6;
+  text-align: right;
 }
 
+/* 名字上方的一行：這是什麼網站（NiziU AYAKA 的非官方應援網站）。一般的小字，不加裝飾 */
 .hero__eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.75em;
   font-size: var(--step--1);
-  font-weight: 600;
-  letter-spacing: 0.16em;
-  color: var(--accent-strong);
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
   margin-bottom: var(--space-2);
   word-break: keep-all;      /* 320px 時只在空格處換行，不拆「サイト」「網站」 */
-}
-.hero__eyebrow::before {
-  content: "";
-  width: var(--dash-w); height: 2px;
-  border-radius: 2px;
-  background: var(--rainbow);
 }
 .hero__name {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;   /* 每一行只有文字那麼寬：英文名字用負的右邊界抵銷字距，撐滿整欄時會比版面多出 1px（700px 左右的寬度） */
   gap: var(--space-2);
   font-weight: 400;
   line-height: 1;
@@ -532,14 +500,17 @@ main a, main button { scroll-margin-top: calc(var(--header-h) + 16px); }
   background: var(--line-strong);
 }
 .hero__slogan {
+  position: relative;
   margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  max-width: 26em;
   font-size: var(--step-1);
   line-height: 1.9;
-  max-width: 22em;
-  position: relative;
-  padding-top: var(--space-3);
-  text-wrap: pretty;
+  line-break: strict;
+  text-wrap: balance;
 }
+/* 標語依逗號切成的小塊（app.js 的 setPhrases）：整塊一起換行；塊比欄位還寬時（文字放很大）才在塊裡換行 */
+.phrase { display: inline-block; max-width: 100%; }
 .hero__slogan::before {
   content: "";
   position: absolute;
@@ -548,8 +519,24 @@ main a, main button { scroll-margin-top: calc(var(--header-h) + 16px); }
   border-radius: 2px;
   background: var(--rainbow);
 }
+@media (max-width: 359px) {
+  .hero__slogan { font-size: var(--step-0); }   /* 320px 左右：小一級，「彩花ちゃんがいてくれるおかげで、」才放得進一行 */
+}
 .hero__note { margin-top: var(--space-2); color: var(--text-muted); font-size: var(--step--1); }
-.hero__cta { margin-top: var(--space-3); }
+.hero__cta { margin-top: var(--space-4); }
+.hero__cta .link-arrow {
+  min-height: 44px;
+  padding: 0 20px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: var(--step--1);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+.hero__cta .link-arrow:hover { background: var(--accent-soft); border-color: var(--accent); text-decoration: none; }
+@media (max-width: 719px) {
+  .hero__cta .link-arrow { font-size: var(--step-0); }
+}
 
 .link-arrow {
   display: inline-flex;
@@ -572,8 +559,6 @@ main a, main button { scroll-margin-top: calc(var(--header-h) + 16px); }
 .link-arrow:hover::after { transform: translateX(2px) rotate(45deg); }
 .link-arrow:hover { text-decoration: underline; }
 
-.hero__kana-vertical { display: none; }
-
 /* 平板以上，以及橫向手機（560～719px）：文字｜照片 兩欄 */
 @media (min-width: 720px), (min-width: 560px) and (max-width: 719px) and (orientation: landscape) {
   .hero { padding: var(--space-6) 0 var(--space-7); }
@@ -582,28 +567,16 @@ main a, main button { scroll-margin-top: calc(var(--header-h) + 16px); }
     align-items: center;
     gap: var(--space-5);
   }
-  .hero__text {
-    order: 1;
-    margin: 0;
-    padding: 0;
-    background: transparent;
-    border-radius: 0;
-  }
+  .hero__text { order: 1; }
   .hero__figure { order: 2; max-width: 460px; justify-self: end; width: 100%; }
   .hero__frame { max-height: none; }
-  .hero__caption {
-    position: relative;
-    top: auto; right: auto;
-    margin-top: var(--space-2);
-    padding: 0;
-    border-radius: 0;
-    background: transparent;
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-    text-align: right;
-  }
   .hero__name-latin { font-size: clamp(4rem, 9vw, 7.5rem); }
   .hero__eyebrow { margin-bottom: var(--space-4); }
+  .hero__slogan { margin-top: var(--space-4); padding-top: var(--space-4); }
+  .hero__slogan:empty { min-height: calc(5.7em + var(--space-4)); }   /* 平板：三行 */
+}
+@media (min-width: 1024px) {
+  .hero__slogan:empty { min-height: calc(3.8em + var(--space-4)); }   /* 桌機：兩行 */
 }
 /* 橫向手機：螢幕只有 320～375px 高，照片不再限制高度，但欄寬與字級縮小 */
 @media (min-width: 560px) and (max-width: 719px) and (orientation: landscape) {
@@ -622,32 +595,9 @@ main a, main button { scroll-margin-top: calc(var(--header-h) + 16px); }
   .hero__name-latin { font-size: clamp(5rem, 8.5vw, 6.5rem); }
   .hero__name-jp { font-size: clamp(2.5rem, 3.2vw, 3rem); letter-spacing: 0.12em; }
   .hero__name-kana { font-size: var(--step-0); }
-  .hero__slogan { font-size: var(--step-2); max-width: 20em; }
-  .hero__figure { margin-left: 3rem; }
-  .hero__kana-vertical {
-    display: block;
-    position: absolute;
-    top: 0;
-    left: -3rem;
-    writing-mode: vertical-rl;
-    font-size: var(--step--1);
-    letter-spacing: 0.45em;
-    color: var(--text);
-    white-space: nowrap;
-  }
-  .hero__kana-vertical span + span { margin-inline-start: 1.2em; }
-  .hero__kana-vertical::after {
-    content: "";
-    display: block;
-    width: 2px;
-    height: 200px;
-    margin: 1em auto 0;
-    border-radius: 2px;
-    background: var(--rainbow);
-  }
 }
 
-/* 唯一的開場動畫 */
+/* 唯一的開場動畫：照片與文字各往上浮現一次 */
 @keyframes rise {
   from { opacity: 0; transform: translateY(14px); }
   to   { opacity: 1; transform: none; }
@@ -657,7 +607,6 @@ main a, main button { scroll-margin-top: calc(var(--header-h) + 16px); }
   animation: rise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 .hero__text { animation-delay: 0.15s; }
-.hero__caption { animation: rise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) 0.3s both; }
 
 /* ---------- 區塊共用 ---------- */
 .section { padding: var(--space-6) 0; }
@@ -665,6 +614,7 @@ main a, main button { scroll-margin-top: calc(var(--header-h) + 16px); }
    區塊本身不是元件，不畫焦點框（焦點框留給下一個 Tab 的元件）。 */
 main section:focus { outline: none; }
 .section--soft { background: var(--bg-soft); }
+.section--line { border-top: 1px solid var(--line); }   /* 前後兩區都是白底時，用一條細線分開（作品與訪談接在年表後面） */
 .section__inner {
   max-width: var(--content);
   margin: 0 auto;
@@ -673,32 +623,6 @@ main section:focus { outline: none; }
 .section__inner--narrow { max-width: 760px; }
 .section__head { margin-bottom: var(--space-5); }
 
-.section { counter-increment: section; }
-.eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.75em;
-  font-family: var(--font-display);
-  font-size: var(--step--2);
-  font-weight: 600;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--accent-strong);
-  margin-bottom: var(--space-2);
-}
-.eyebrow::after {
-  content: counter(section, decimal-leading-zero);
-  order: -1;
-  font-weight: 500;
-  color: var(--text-muted);
-  letter-spacing: 0.12em;
-}
-.eyebrow::before {
-  content: "";
-  width: var(--dash-w); height: 2px;
-  border-radius: 2px;
-  background: var(--rainbow);
-}
 .section__title {
   font-size: var(--step-3);
   font-weight: 600;
@@ -711,6 +635,14 @@ main section:focus { outline: none; }
   margin-top: var(--space-2);
   color: var(--text-muted);
   max-width: var(--measure);
+}
+@media (max-width: 374px) {
+  /* 小手機（320～360px）：最長的標題「バースデーカウントダウン」也放得進一行，不會只剩一個「ン」掉到第二行
+     （28px 時這個標題約 328px 寬，375px 以上的螢幕放得下） */
+  .section__title { font-size: var(--step-2); letter-spacing: 0.02em; }
+}
+@media (max-width: 299px) {
+  .section__title { font-size: var(--step-1); }   /* 折疊機外螢幕（280px） */
 }
 
 @media (min-width: 900px) {
@@ -732,10 +664,10 @@ main section:focus { outline: none; }
   }
   .section__title { font-size: var(--step-2); letter-spacing: 0.02em; text-wrap: balance; }
   .section__lead { font-size: var(--step-0); line-height: 1.7; }
-  /* 相簿與留言需要整個寬度：標題回到上方 */
-  #gallery .section__inner, #messages .section__inner { display: block; }
-  #gallery .section__head, #messages .section__head { position: static; margin-bottom: var(--space-5); padding-right: 0; }
-  .gallery { gap: var(--space-5) 24px; }
+  /* 相簿需要整個寬度：標題回到上方 */
+  #gallery .section__inner { display: block; }
+  #gallery .section__head { position: static; margin-bottom: var(--space-5); padding-right: 0; }
+  .gallery { gap: var(--space-6) 24px; }
 }
 
 /* ---------- 個人資料 ---------- */
@@ -757,155 +689,121 @@ main section:focus { outline: none; }
   word-break: keep-all;      /* 「Nizi Project（虹プロジェクト）」放不下時在空格處換行，不拆片假名 */
 }
 .profile__value { font-weight: 500; word-break: auto-phrase; }   /* 日文在文節處換行（「として」不拆成「と／して」） */
-:lang(zh-Hant) .profile__value { word-break: keep-all; overflow-wrap: anywhere; }   /* 中文只在空格處換行（「正式」不拆成「正／式」） */
-.profile__value--placeholder {
-  display: inline-block;
-  font-weight: 400;
-  color: var(--text-muted);
-  font-size: var(--step--1);
-  padding: 0 0.7em;
-  border: 1px dashed var(--line-strong);
-  border-radius: 999px;
-  line-height: 1.9;
-}
+:lang(zh-Hant) .profile__value { word-break: keep-all; overflow-wrap: anywhere; }   /* 中文只在空格、標點處換行（「正式」不拆成「正／式」） */
 .profile__age { font-weight: 400; color: var(--text-muted); margin-left: 0.3em; }
 
-@media (max-width: 599px) {
-  .profile__row--placeholder {
-    grid-template-columns: 7.5em minmax(0, 1fr);
-    gap: var(--space-2);
-    align-items: center;
-    padding: 10px 0;
-  }
-}
 @media (min-width: 600px) {
-  .profile {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    column-gap: 0;
-  }
   .profile__row {
-    grid-column: 1 / -1;
     grid-template-columns: 11em minmax(0, 1fr);
     gap: var(--space-3);
     align-items: baseline;
   }
-  .profile__row--placeholder {
-    grid-column: auto;
-    grid-template-columns: 7.5em minmax(0, 1fr);
-    padding: var(--space-3) var(--space-5) var(--space-3) 0;
-  }
 }
 
-/* ---------- 生日倒數 ---------- */
-.birthday {
-  position: relative;
-  max-width: 640px;
-  margin: 0 auto;
-  padding: var(--space-5) var(--space-4);
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
-  text-align: center;
-  overflow: hidden;
-}
-.birthday::before {
-  content: "";
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 3px;
-  background: var(--rainbow);
-}
-.birthday__mark {
-  position: absolute;
-  right: 16px;
-  top: 10px;
-  font-family: var(--font-display);
-  font-size: 2.75rem;
-  font-weight: 300;
+/* 個人資料下面的「興趣」：同樣的列，但右邊是一兩句話，所以用一般字重、一般的換行 */
+.profile--notes { margin-top: var(--space-3); }
+.profile--notes .profile__value { font-weight: 400; }
+:lang(zh-Hant) .profile--notes .profile__value { word-break: normal; overflow-wrap: normal; }
+
+/* ---------- 區塊裡的小節（興趣、作品、訪談） ----------
+   小標題和相簿第二組的標題同一個樣子；下面接一行小字說明（可省略）和內容。 */
+.block { margin-top: var(--space-6); }
+.block--first { margin-top: 0; }
+.block__title {
+  font-size: var(--step-1);
+  font-weight: 600;
   letter-spacing: 0.04em;
-  line-height: 1;
-  color: var(--accent);
-  opacity: 0.22;
-  pointer-events: none;
-  user-select: none;
+  line-height: 1.4;
 }
-.birthday__mark::before { content: attr(data-mark); }
-.birthday__lead { color: var(--text-muted); font-size: var(--step--1); letter-spacing: 0.04em; }
-.countdown {
+.block__lead {
+  margin-top: var(--space-1);
+  color: var(--text-muted);
+  font-size: var(--step--1);
+  max-width: var(--measure);
+  word-break: auto-phrase;
+}
+#profile-hobbies { margin-top: var(--space-5); }
+
+/* ---------- 出處（可以展開的小清單） ----------
+   預設收合，只有一個小小的「出典／資料來源」；展開後每一列是「項目：來源（刊登日期）」。 */
+.sources {
+  margin-top: var(--space-2);
+  color: var(--text-muted);
+  font-size: var(--step--1);
+}
+.sources[hidden] { display: none; }
+.sources__summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6em;
+  min-height: 40px;
+  padding-right: 0.4em;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  list-style: none;                 /* 不用瀏覽器預設的三角形，改畫和其他連結同一種的小箭頭 */
+}
+.sources__summary::-webkit-details-marker { display: none; }
+.sources__summary::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 0.45em; height: 0.45em;
+  margin-left: 0.1em;
+  border-top: 1.5px solid currentColor;
+  border-right: 1.5px solid currentColor;
+  transform: rotate(45deg);         /* 收合：朝右 */
+  transition: transform 0.2s ease;
+}
+.sources[open] > .sources__summary::before { transform: translate(-0.1em, -0.12em) rotate(135deg); }   /* 展開：朝下 */
+.sources__summary:hover { color: var(--accent-strong); }
+.sources__list {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 6px;
-  margin: var(--space-4) 0;
+  gap: var(--space-1);
+  padding: 0 0 var(--space-2);
+  line-height: 1.7;
+  max-width: var(--measure);
+}
+.sources__for { margin-right: 0.2em; }
+.sources--timeline { margin-top: var(--space-4); }
+
+/* ---------- 生日倒數 ----------
+   不放在卡片裡：上面一句「距離下一個生日還有」，接著就是數字，再一句「即將迎來 N 歲生日」，讀起來是一段話。 */
+.birthday { max-width: 640px; }
+.birthday__lead { color: var(--text-muted); font-size: var(--step--1); }
+.countdown {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) clamp(0.75rem, 4vw, 1.5rem);
+  margin: var(--space-2) 0 var(--space-4);
 }
 .countdown__tile {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  min-width: 0;
-  padding: 14px 4px 12px;
-  background: var(--surface-2);
-  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3em;
+}
+@media (max-width: 299px) {
+  /* 折疊機外螢幕（280px）：一行放不下四組，排成兩行各兩組，不讓「秒」單獨掉到第二行 */
+  .countdown { display: grid; grid-template-columns: auto auto; justify-content: start; }
 }
 .countdown__num {
   font-family: var(--font-display);
-  font-size: clamp(1.5rem, 1rem + 3.6vw, 2.75rem);
+  font-size: clamp(1.5rem, 13vw - 1.2rem, 3rem);   /* 320px 寬的螢幕也能把日、時、分、秒排在同一行（中文的單位比較長） */
   font-weight: 300;
-  line-height: 1;
-  letter-spacing: 0;
-  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;   /* 數字等寬：秒數跳動時整排不會左右晃 */
 }
-.countdown__unit { font-size: var(--step--2); color: var(--text-muted); letter-spacing: 0.08em; }
-.birthday__until { font-size: var(--step-1); font-weight: 500; letter-spacing: 0.04em; }
+.countdown__unit { font-size: var(--step--1); color: var(--text-muted); }
+.birthday__until { font-size: var(--step-1); font-weight: 500; }
 .birthday__greeting {
   font-size: var(--step-3);
   font-weight: 600;
   letter-spacing: 0.04em;
   line-height: 1.4;
-  padding: var(--space-3) 0 var(--space-2);
+  padding-bottom: var(--space-2);
   text-wrap: balance;
   word-break: auto-phrase;   /* 「お誕生日」不會在詞中間被拆開 */
 }
 .birthday__greeting-lead { color: var(--text-muted); }
-
-@media (max-width: 599px) {
-  .birthday { padding: var(--space-4) var(--space-3); }
-}
-/* 「6.20」裝飾只在桌機版（有自己的一欄）顯示，窄螢幕一律隱藏，不會壓到文字 */
-@media (max-width: 899px) {
-  .birthday__mark { display: none; }
-}
-@media (min-width: 600px) {
-  .birthday { padding: var(--space-6) var(--space-6); }
-  .countdown { gap: var(--space-3); }
-}
-@media (min-width: 900px) {
-  /* 桌機：裝飾用的「6.20」佔卡片右側一欄，不再疊在文字上 */
-  .birthday {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 150px);
-    align-items: center;
-    column-gap: var(--space-5);
-    text-align: left;
-    max-width: 720px;
-  }
-  .countdown { grid-template-columns: repeat(4, minmax(80px, 1fr)); gap: 12px; }
-  .countdown__num { font-size: 2.25rem; }
-  .birthday__countdown, .birthday__today { grid-column: 1; grid-row: 1; }
-  .birthday__mark {
-    position: static;
-    grid-column: 2;
-    grid-row: 1;
-    align-self: center;
-    justify-self: end;
-    margin: 0;
-    font-size: clamp(2.5rem, 3.2vw, 3.5rem);
-    opacity: 0.35;
-  }
-  .birthday__today { text-align: center; }
-}
 
 /* ---------- 年表 ---------- */
 .timeline {
@@ -942,20 +840,19 @@ main section:focus { outline: none; }
   font-variant-numeric: tabular-nums;
 }
 .timeline__title { font-size: var(--step-1); font-weight: 600; line-height: 1.5; margin-top: 2px; text-wrap: balance; word-break: auto-phrase; }
-.timeline__note { color: var(--text-muted); margin-top: var(--space-1); font-size: var(--step--1); line-height: 1.8; }
+.timeline__note { color: var(--text-muted); margin-top: var(--space-1); font-size: var(--step--1); line-height: 1.8; white-space: pre-line; }   /* data.js 裡的 \n 會換行 */
+.timeline__link { white-space: nowrap; }   /* 說明後面的「作品の紹介を見る」：連到作品區的那一首歌 */
 
-.timeline__item--placeholder::before {
+.timeline__item--placeholder::before {   /* 還沒發生的事：空心的圓點 */
   background: var(--bg);
-  border: 1px dashed var(--line-strong);
+  border: 1px solid var(--line-strong);
   box-shadow: none;
-  width: 9px; height: 9px;
 }
 .timeline__placeholder {
-  padding: var(--space-3) var(--space-4);
-  border: 1px dashed var(--line-strong);
-  border-radius: var(--radius-sm);
   color: var(--text-muted);
   font-size: var(--step--1);
+  line-height: 1.8;
+  padding-top: 0.15em;   /* 第一行和圓點對齊 */
 }
 @media (min-width: 720px) {
   /* 平板以上：日期｜圓點｜內容 三欄，日期對齊成一欄 */
@@ -972,13 +869,59 @@ main section:focus { outline: none; }
   .timeline__note, .timeline__placeholder { grid-column: 3; }
 }
 
-/* ---------- 相簿 ---------- */
+/* ---------- 作品與訪談 ----------
+   不用卡片：一則一則用細線分開，和個人資料的列同一種節奏。標題、兩行小字（成員、收錄作品）、
+   一兩句介紹，最後一列是連結（官方作品頁、訪談出處）。 */
+.entries {
+  margin-top: var(--space-3);
+  border-top: 1px solid var(--line);
+}
+.entry {
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--line);
+}
+.entry:focus { outline: none; }   /* 年表的連結跳過來時焦點會落在這裡；條目本身不是元件，不畫焦點框 */
+.entry__title {
+  font-size: var(--step-0);
+  font-weight: 600;
+  line-height: 1.6;
+  letter-spacing: 0.02em;
+}
+.entry__meta {
+  color: var(--text-muted);
+  font-size: var(--step--1);
+  line-height: 1.7;
+}
+.entry__title + .entry__meta { margin-top: 2px; }
+.entry__text {
+  margin-top: var(--space-2);
+  max-width: var(--measure);
+}
+.entry__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-4);
+  margin-top: var(--space-1);
+  font-size: var(--step--1);
+}
+.entry__links a { padding: 6px 0; }   /* 手指好按的高度 */
+
+/* ---------- 相簿 ----------
+   照片是主角：格子裡只有照片和一行說明。沒有編號；整組同一天時日期只在格子上方寫一次。 */
 .gallery {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-3) 12px;
+  gap: var(--space-4) 12px;
 }
+.gallery__meta,
+.gallery-group__date {
+  font-size: var(--step--1);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.gallery__meta { margin: calc(-1 * var(--space-3)) 0 var(--space-3); }   /* 緊接在區塊說明的下面 */
 .gallery__btn {
+  display: block;
   width: 100%;
   padding: 0;
   border: 0;
@@ -993,62 +936,49 @@ main section:focus { outline: none; }
   overflow: hidden;
   border-radius: var(--radius-sm);
   background: var(--surface-2);
-  box-shadow: var(--shadow-sm);
 }
 .gallery__img {
   width: 100%; height: 100%;
   object-fit: cover;
-  transition: transform 0.5s ease;
 }
 .gallery__caption {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  column-gap: 0.6em;
-  align-items: baseline;
   margin-top: var(--space-2);
   font-size: var(--step-0);
   line-height: 1.5;
 }
-.gallery__index {
-  grid-row: 1 / 3;
-  font-family: var(--font-display);
+.gallery__caption-text { display: block; word-break: auto-phrase; transition: color 0.2s ease; }
+.gallery__date {
+  display: block;
   font-size: var(--step--2);
   color: var(--text-muted);
-  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+  /* 手機的半寬格子放不下整句時，只在空格處折行，不折出孤字 */
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
 }
-.gallery__caption-text { grid-column: 2; word-break: auto-phrase; }
+/* 整組同一天：日期已經寫在格子上方，每格底下不再重複（仍是按鈕的描述，螢幕閱讀器唸得到） */
+.gallery--dated .gallery__date { display: none; }
 @media (max-width: 699px) {
   .gallery__item:first-child { grid-column: 1 / -1; }
   /* 第二組（視訊回憶）是次級群組，第一張不全寬 */
   #gallery-grid-call .gallery__item:first-child { grid-column: auto; }
 }
-.gallery__date {
-  display: block;
-  grid-column: 2;
-  font-size: var(--step--2);
-  color: var(--text-muted);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.04em;
-  /* 手機的半寬格子放不下「2026年10月8日・ビデオ通話」時，只在「・」或空格處折行，不折出孤字 */
-  word-break: keep-all;
-  overflow-wrap: anywhere;
-  text-wrap: pretty;         /* 兩行時不讓最後一行只剩「日」 */
-}
 @media (max-width: 359px) {
-  /* 320px 左右的兩欄格子只有 138px 寬：圖說改用燈箱圖說同級的字，日期不加字距，才不會折成三行 */
+  /* 320px 左右的兩欄格子只有 138px 寬：說明用小一級的字，才不會每張都折成兩三行 */
   .gallery__caption { font-size: var(--step--1); }
-  .gallery__date { letter-spacing: 0; }
 }
 
+/* 滑鼠移上去：照片不動，底下的說明變色；觸控按下時整格微微縮一下 */
 @media (hover: hover) {
-  .gallery__btn:hover .gallery__img { transform: scale(1.03); }
+  .gallery__btn:hover + .gallery__caption .gallery__caption-text { color: var(--accent-strong); }
 }
 @media (hover: none) {
   .gallery__frame { transition: transform 0.12s ease; }
   .gallery__btn:active .gallery__frame { transform: scale(0.98); }
 }
 @media (min-width: 700px) {
-  .gallery { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4) 20px; }
+  .gallery { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-5) 20px; }
 }
 
 /* 相簿的第二組（視訊回憶）：細線隔開、小標＋日期，格子樣式和第一組相同 */
@@ -1065,26 +995,10 @@ main section:focus { outline: none; }
   gap: var(--space-1) 0.9em;
 }
 .gallery-group__title {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.75em;
   font-size: var(--step-1);
   font-weight: 600;
   letter-spacing: 0.04em;
   line-height: 1.4;
-}
-.gallery-group__title::before {
-  content: "";
-  flex: 0 0 auto;
-  width: var(--dash-w); height: 2px;
-  border-radius: 2px;
-  background: var(--rainbow);
-}
-.gallery-group__date {
-  font-size: var(--step--1);
-  color: var(--text-muted);
-  letter-spacing: 0.04em;
-  font-variant-numeric: tabular-nums;
 }
 .gallery-group__lead {
   margin-top: var(--space-1);
@@ -1108,10 +1022,9 @@ main section:focus { outline: none; }
   padding: 0;
   border: 0;
   background: var(--lightbox-bg);
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
-  color: #fff;
+  color: var(--lightbox-fg);
   flex-direction: column;
+  overscroll-behavior: contain;   /* 在燈箱裡捲到底時，不會帶著後面的頁面一起捲 */
 }
 .lightbox[open] { display: flex; }
 .lightbox:focus { outline: none; }
@@ -1126,8 +1039,8 @@ main section:focus { outline: none; }
 .lightbox__counter {
   font-family: var(--font-display);
   font-size: var(--step--1);
-  letter-spacing: 0.12em;
-  color: rgba(255, 255, 255, 0.78);
+  letter-spacing: 0.04em;
+  color: var(--lightbox-fg-2);
   font-variant-numeric: tabular-nums;
 }
 .lightbox__figure {
@@ -1155,7 +1068,7 @@ main section:focus { outline: none; }
   height: auto;
   object-fit: contain;
   border-radius: 10px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--lightbox-shadow);
 }
 .lightbox__caption {
   flex: 0 0 auto;
@@ -1167,9 +1080,8 @@ main section:focus { outline: none; }
 .lightbox__caption-text { word-break: auto-phrase; }
 .lightbox__caption-date {
   display: block;
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--lightbox-fg-3);
   font-size: var(--step--2);
-  letter-spacing: 0.06em;
   font-variant-numeric: tabular-nums;
 }
 .lightbox__nav {
@@ -1181,8 +1093,7 @@ main section:focus { outline: none; }
 }
 .lightbox__hint {
   font-size: var(--step--2);
-  color: rgba(255, 255, 255, 0.5);
-  letter-spacing: 0.06em;
+  color: var(--lightbox-fg-3);
   text-align: center;
   padding: 0 12px;
 }
@@ -1196,13 +1107,13 @@ main section:focus { outline: none; }
   position: relative;
   width: 46px; height: 46px;
   flex: 0 0 auto;
-  border: 1px solid rgba(255, 255, 255, 0.45);
+  border: 1px solid var(--lightbox-line);
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.16);
-  color: #fff;
-  transition: background 0.2s ease;
+  background: var(--lightbox-btn);
+  color: var(--lightbox-fg);
+  transition: background-color 0.2s ease;
 }
-.lightbox__btn:hover { background: rgba(255, 255, 255, 0.22); }
+.lightbox__btn:hover { background: var(--lightbox-btn-hover); }
 .lightbox__btn::before,
 .lightbox__btn::after {
   content: "";
@@ -1224,7 +1135,7 @@ main section:focus { outline: none; }
 }
 .lightbox__btn--close::before { transform: translate(-50%, -50%) rotate(45deg); }
 .lightbox__btn--close::after  { transform: translate(-50%, -50%) rotate(-45deg); }
-.lightbox :focus-visible { outline-color: #fff; }
+.lightbox :focus-visible { outline-color: var(--lightbox-fg); }
 
 /* 矮視窗（橫向手機、400% 縮放）：照片不再被其他列壓成縮圖，改成整個燈箱可上下捲動 */
 @media (max-height: 479px) {
@@ -1267,33 +1178,18 @@ main section:focus { outline: none; }
   .lightbox__nav .lightbox__btn--close { position: absolute; top: 6px; right: 10px; width: 46px; height: 46px; }
 }
 
-/* ---------- 應援留言 ---------- */
+/* ---------- 應援留言 ----------
+   目前沒有留言（data.js 的 messages 是空的），這一區只有「給彩花的信」的入口小卡。
+   之後加了留言，會以一般的段落排在小卡上方：一則一段，另一種語言用小字跟在下面。 */
 .messages {
   display: grid;
-  gap: var(--space-3);
-  align-items: start;
+  gap: var(--space-4);
+  max-width: var(--measure);
+  margin-bottom: var(--space-5);
 }
-.message {
-  position: relative;
-  padding: var(--space-4) var(--space-4) var(--space-3);
-  background: var(--surface-2);
-  border-radius: var(--radius);
-}
-.message::before {
-  content: "“";
-  position: absolute;
-  top: 6px; left: 18px;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 3.5rem;
-  line-height: 1;
-  color: var(--accent);
-  opacity: 0.55;
-}
-.message__text {
-  position: relative;
-  line-height: 1.9;
-  padding-top: var(--space-2);
-}
+.messages[hidden] { display: none; }
+.message + .message { padding-top: var(--space-4); border-top: 1px solid var(--line); }
+.message__text { line-height: 1.9; }
 .message__text--sub {
   margin-top: var(--space-2);
   font-size: var(--step--1);
@@ -1301,20 +1197,118 @@ main section:focus { outline: none; }
   color: var(--text-muted);
 }
 .message__from {
-  margin-top: var(--space-3);
+  margin-top: var(--space-2);
   font-size: var(--step--2);
   color: var(--text-muted);
-  letter-spacing: 0.08em;
 }
 .message__from::before { content: "— "; }
 
-@media (min-width: 700px) {
-  .messages { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
+/* 通往「彩花ちゃんへの手紙」（letter.html）的入口小卡（整張卡是一個連結）。
+   全站只有這一張卡：和紙色、細框，像一封放在桌上的信。 */
+.letter-entry {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-1) var(--space-4);
+  align-items: center;
+  max-width: 560px;
+  padding: var(--space-4);
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+  color: var(--text);
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.2s ease;
+}
+.letter-entry__title {
+  grid-column: 1;
+  font-family: var(--font-letter);
+  font-size: var(--step-1);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1.5;
+}
+.letter-entry__text {
+  grid-column: 1;
+  font-size: var(--step--1);
+  line-height: 1.7;
+  color: var(--text-muted);
+  word-break: auto-phrase;
+  line-break: strict;
+}
+.letter-entry__cta {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  font-size: var(--step--1);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--accent-strong);
+  white-space: nowrap;
+}
+.letter-entry__cta::after {
+  content: "";
+  width: 0.5em; height: 0.5em;
+  border-top: 1.5px solid currentColor;
+  border-right: 1.5px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform 0.2s ease;
+}
+.letter-entry:hover { border-color: var(--accent); }
+.letter-entry:hover .letter-entry__cta { text-decoration: underline; text-underline-offset: 0.2em; }
+.letter-entry:hover .letter-entry__cta::after { transform: translateX(2px) rotate(45deg); }
+/* 文字填入前先把高度留好（避免版面跳動） */
+/* 合言葉のページ（私密區，另一個網站）的入口：信的入口小卡下面的一行小字 */
+.room-entry {
+  margin-top: var(--space-4);
+  font-size: var(--step--1);
+  line-height: 1.7;
+}
+.room-entry a { display: inline-block; padding: 6px 0; }
+
+.letter-entry__title:empty { min-height: 1.5em; }
+.letter-entry__text:empty { min-height: 1.7em; }
+.letter-entry__cta:empty { min-width: 5em; min-height: 1.4em; }
+@media (max-width: 479px) {
+  .letter-entry { grid-template-columns: minmax(0, 1fr); padding: var(--space-3) var(--space-4); }
+  .letter-entry__cta { grid-column: 1; grid-row: auto; margin-top: var(--space-2); }
 }
 
 /* ---------- 關於 ---------- */
 .prose p + p { margin-top: var(--space-3); }
 .prose { max-width: var(--measure); }
+
+/* ---------- 官方連結（關於本站裡，分享按鈕的上面） ---------- */
+.links {
+  max-width: var(--measure);
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+.links[hidden] { display: none; }
+.links__title {
+  font-size: var(--step-0);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+}
+.links__list { margin-top: var(--space-1); }
+.links__list a { display: inline-block; padding: 6px 0; }
+.links__handle {                    /* 帳號名稱（@…）：不加底線的小字，接在連結後面 */
+  margin-left: 0.6em;
+  color: var(--text-muted);
+  font-size: var(--step--1);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.links__note {
+  margin-top: var(--space-1);
+  color: var(--text-muted);
+  font-size: var(--step--1);
+  line-height: 1.7;
+}
 
 /* ---------- 分享這個網站（關於本站的最後） ---------- */
 .share {
@@ -1350,7 +1344,7 @@ main section:focus { outline: none; }
   letter-spacing: 0.06em;
   line-height: 1.4;
   white-space: nowrap;
-  transition: background 0.2s ease, border-color 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 .share__btn:hover { background: var(--accent-soft); border-color: var(--accent); }
 .share__icon { width: 16px; height: 16px; flex: 0 0 auto; }
@@ -1389,6 +1383,173 @@ main section:focus { outline: none; }
   font-variant-numeric: tabular-nums;
   -webkit-user-select: all;
   user-select: all;
+}
+
+/* ---------- 彩花ちゃんへの手紙（letter.html） ----------
+   橫書、一欄、閱讀寬度約 30～36 個日文字、行高寬鬆。信的本文用明朝體，寫在和紙色的便箋上：
+   600px 以上是雙細框的便箋，手機只有淡淡的底色與一圈細框。 */
+
+/* 信頁的頁首：沒有導覽列、不固定在上方，只有品牌字標（連回首頁）與語言切換 */
+.letter-page .site-nav { display: none; }
+.letter-page .site-header { position: static; top: auto; }
+.letter-page .lang-switch { margin-left: auto; }
+
+.letter {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: var(--space-5) var(--gutter) var(--space-7);
+}
+.letter__head { margin-bottom: var(--space-5); }
+.letter__title {
+  font-size: var(--step-3);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.3;
+  text-wrap: balance;
+  word-break: auto-phrase;
+}
+.letter__lead {
+  margin-top: var(--space-2);
+  color: var(--text-muted);
+  max-width: var(--measure);
+  line-height: 1.8;
+  white-space: pre-line;   /* letter-data.js 裡的 \n 會換行 */
+  text-wrap: pretty;
+  word-break: auto-phrase;
+  line-break: strict;
+}
+.letter__title:empty { min-height: 1.3em; }
+.letter__lead:empty { min-height: 3.6em; }
+.letter__salutation:empty { min-height: 1.5em; }
+
+/* 便箋：手機是淡淡的底色加一圈細框；600px 以上再加一層內框（見下方的 media query） */
+.letter__paper {
+  position: relative;
+  padding: var(--space-5) var(--space-3) var(--space-4);
+  background: var(--paper);
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-letter);
+}
+.letter__salutation {
+  position: relative;
+  font-size: var(--step-1);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  line-height: 1.6;
+  padding-bottom: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+.letter__salutation::after {
+  content: "";
+  position: absolute;
+  left: 0; bottom: 0;
+  width: var(--dash-w); height: 2px;
+  border-radius: 2px;
+  background: var(--rainbow);
+}
+.letter__body { position: relative; }
+.letter__section + .letter__section { margin-top: var(--space-6); }
+/* 信裡每一段的小標：一般的小字（彩虹短線只留給信的開頭與結尾） */
+.letter__h {
+  font-family: var(--font);
+  font-size: var(--step--1);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  line-height: 1.5;
+  color: var(--accent-strong);
+  margin-bottom: var(--space-3);
+}
+.letter__p {
+  line-height: 2.05;
+  white-space: pre-line;   /* 段落裡的 \n 會換行（同一段另起一行），段落之間才有空白 */
+  text-wrap: pretty;
+  word-break: auto-phrase;
+  line-break: strict;
+}
+.letter__p + .letter__p { margin-top: 1.1em; }
+.letter__words {
+  margin: var(--space-4) 0;
+  padding: var(--space-2) 0 var(--space-2) var(--space-4);
+  border-left: 2px solid var(--accent);
+  line-height: 2;
+  word-break: auto-phrase;
+  line-break: strict;
+}
+.letter__word { padding-left: 0.5em; text-indent: -0.5em; text-wrap: balance; }   /* 「 を行頭にぶら下げる；手機上折成兩行時兩行等長，不把「だいすき」拆開 */
+/* 一句裡的小塊：整塊一起換行（不支援 word-break: auto-phrase 的瀏覽器也不會把詞拆開）；
+   塊比欄位還寬時（文字放很大）才在塊裡換行，不會撐出橫向捲軸 */
+.letter__chunk { display: inline-block; max-width: 100%; text-indent: 0; }
+.letter__word + .letter__word { margin-top: 0.35em; }
+.letter__word::before { content: "「"; }
+.letter__word::after { content: "」"; }
+.letter__words + .letter__p { margin-top: var(--space-4); }
+.letter__link { margin-top: var(--space-3); }
+
+.letter__signoff {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-1);
+  margin-top: var(--space-6);
+  text-align: right;
+}
+.letter__signoff::before {
+  content: "";
+  width: var(--dash-w); height: 2px;
+  margin-bottom: var(--space-3);
+  border-radius: 2px;
+  background: var(--rainbow);
+}
+.letter__date {
+  font-size: var(--step--1);
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+}
+.letter__signature {
+  font-family: var(--font-display);
+  font-size: var(--step-1);
+  font-weight: 500;
+  letter-spacing: 0.14em;
+}
+.letter__back { margin-top: var(--space-5); }
+.link-arrow--back { flex-direction: row-reverse; }
+.link-arrow--back::after { transform: rotate(-135deg); }
+.link-arrow--back:hover::after { transform: translateX(-2px) rotate(-135deg); }
+
+@media (min-width: 600px) {
+  .letter { padding-top: var(--space-6); }
+  .letter__paper {
+    padding: var(--space-6) var(--space-6) var(--space-5);   /* 768px：每行約 36 字 */
+    border-radius: 6px;
+    /* 外框 1px（border）＋ 8px 留白 ＋ 內框 1px：像便箋的雙細線 */
+    box-shadow: inset 0 0 0 8px var(--paper), inset 0 0 0 9px var(--paper-line-2), var(--shadow-sm);
+  }
+  .letter__p { word-break: normal; }   /* 行寬夠時依一般規則換行，右端才不會太參差；手機才用 auto-phrase 避免拆字 */
+}
+@media (min-width: 900px) {
+  .letter { max-width: 48rem; padding: var(--space-7) var(--gutter); }
+  .letter__head { margin-bottom: var(--space-6); }
+  .letter__paper { padding: var(--space-7) var(--space-6) var(--space-6); }
+  .letter__body { font-size: 1.125rem; }   /* 18px：每行約 34 字 */
+  .letter__salutation { font-size: var(--step-2); }
+  .letter__p { line-height: 2.1; }
+  .letter__section + .letter__section { margin-top: var(--space-7); }
+}
+
+/* 列印：只印信本身（沒有頁首、頁尾、連結），白底、不畫框 */
+@media print {
+  .letter-page .site-header,
+  .letter-page .site-footer,
+  .letter-page .skip-link,
+  .letter__back,
+  .letter__link { display: none; }
+  .letter { max-width: none; padding: 0; }
+  .letter__paper { border: 0; box-shadow: none; background: #fff; padding: 0; color: #000; }
+  .letter__p, .letter__words, .letter__signoff { break-inside: avoid-page; }   /* 段落、準備過的三句、署名不跨頁 */
+  .letter__h { break-after: avoid-page; }                                        /* 小標不落在頁尾 */
+  .letter__signoff { break-before: avoid-page; }                                 /* 署名不單獨一頁 */
 }
 
 /* ---------- 頁尾 ---------- */
@@ -1445,16 +1606,17 @@ main section:focus { outline: none; }
     animation: none !important;
     transition: none !important;
   }
-  .gallery__btn:hover .gallery__img { transform: none; }
+  /* 倒數每秒跳動的秒數也是「會動的東西」：不顯示，日、時、分照常更新（WCAG 2.2.2） */
+  .countdown__tile--seconds { display: none; }
 }
 
 /* ---------- 列印 ---------- */
 @media print {
-  .site-header { position: static; -webkit-backdrop-filter: none; backdrop-filter: none; }
-  .site-nav, .lang-switch, .hero__cta, .hero__glow, .share, .lightbox, .skip-link { display: none !important; }
+  .site-header { position: static; }
+  .site-nav, .lang-switch, .hero__cta, .share, .lightbox, .skip-link { display: none !important; }
   .section__head { position: static; }
   .gallery__item, .message, .timeline__item, .birthday { break-inside: avoid; }
-  .hero__figure, .hero__text, .hero__caption { animation: none; }
+  .hero__figure, .hero__text { animation: none; }
 }
 
 /* ---------- 404 頁 ---------- */

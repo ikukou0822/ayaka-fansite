@@ -147,7 +147,37 @@ async function switchLang(page, lang) {
       ok(`default lang is ja @${width}`, lang0 === 'ja', lang0);
       const over = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, iw: window.innerWidth }));
       ok(`no horizontal overflow @${width} (ja)`, over.sw <= over.iw, JSON.stringify(over));
+      // 精修後的版面約定（DESIGN.md）：版面本身不溢出（不靠 body 的 overflow-x: hidden 藏起來）；
+      // 標語的文字照 data.js 原樣顯示，換行只發生在逗號之後；相簿每組的日期只寫一次，每格的日期仍是按鈕的描述
+      const refine = await page.evaluate(() => {
+        const vis = (el) => { if (!el) return false; const b = el.getBoundingClientRect(); return b.width > 0 && b.height > 0; };
+        const phrases = Array.from(document.querySelectorAll('.hero__slogan .phrase'));
+        const tileDates = Array.from(document.querySelectorAll('#gallery .gallery__date'));
+        const groupDate = document.querySelector('#gallery-date');
+        return {
+          bodyOverflowX: getComputedStyle(document.body).overflowX,
+          leftovers: document.querySelectorAll('.eyebrow, .hero__glow, .hero__kana-vertical, .gallery__index, .birthday__mark').length,
+          slogan: (document.querySelector('.hero__slogan') || {}).textContent || '',
+          dataSlogan: window.SITE_DATA.hero.slogan.ja,
+          phrases: phrases.length,
+          phraseSplit: phrases.filter(p => p.getClientRects().length > 1).map(p => p.textContent),
+          groupDate: vis(groupDate) ? groupDate.textContent : '',
+          tileDatesVisible: tileDates.filter(vis).length,
+          tileDatesFilled: tileDates.filter(e => e.textContent.trim()).length,
+          describedBy: Array.from(document.querySelectorAll('#gallery button')).every(b => (b.getAttribute('aria-describedby') || '').split(/\s+/).every(id => document.getElementById(id))),
+          messages: window.SITE_DATA.messages.length,
+          messagesShown: vis(document.querySelector('#messages-list')),
+          countdownRows: new Set(Array.from(document.querySelectorAll('.countdown__tile')).map(t => Math.round(t.getBoundingClientRect().top))).size,
+        };
+      });
+      ok(`layout fits without hiding overflow on body @${width}`, refine.bodyOverflowX === 'visible', refine.bodyOverflowX);
+      ok(`hero sentence is shown exactly as written in data.js @${width}`, refine.slogan === refine.dataSlogan && refine.phrases >= 1, JSON.stringify({ slogan: refine.slogan, phrases: refine.phrases }));
+      if (width >= 375) ok(`hero sentence wraps only after commas @${width}`, refine.phraseSplit.length === 0, JSON.stringify(refine.phraseSplit));
+      ok(`each photo group shows its date once; tile dates remain as button descriptions @${width}`, /2026/.test(refine.groupDate) && refine.tileDatesVisible === 0 && refine.tileDatesFilled === 18 && refine.describedBy, JSON.stringify({ g: refine.groupDate, v: refine.tileDatesVisible, f: refine.tileDatesFilled, d: refine.describedBy }));
+      ok(`countdown stays on one row @${width}`, refine.countdownRows === 1, String(refine.countdownRows));
       if (width === 375) {
+        ok('no section labels, glow layer, vertical decoration, tile numbers or birthday mark remain', refine.leftovers === 0, String(refine.leftovers));
+        ok('message list is shown only when data.js has messages', refine.messagesShown === (refine.messages > 0), JSON.stringify({ n: refine.messages, shown: refine.messagesShown }));
         // 還沒捲動時，視訊回憶的照片不應該已經載入（lazy loading 生效、不影響第一屏）
         const callLoadedEarly = await page.evaluate(() => Array.from(document.querySelectorAll('#gallery-grid-call img')).filter(i => i.complete && i.naturalWidth > 0).length);
         ok('call photos are not loaded before scrolling', callLoadedEarly === 0, String(callLoadedEarly));
@@ -635,9 +665,14 @@ async function switchLang(page, lang) {
       const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
       report.info[`darkBodyBg${width}`] = bg;
       ok(`dark mode changes body background @${width}`, !/rgb\(255, 255, 255\)/.test(bg), bg);
-      // 深色模式的主視覺光暈要用另一組顏色與較大的模糊（V-03／V2-01：規則順序錯了會被淺色的蓋掉）
-      const glow = await page.evaluate(() => { const s = getComputedStyle(document.querySelector('.hero__glow')); return { filter: s.filter, opacity: s.opacity, bg: s.backgroundImage.slice(0, 60) }; });
-      ok(`dark mode hero glow uses the dark palette (blur 40px) @${width}`, glow.filter === 'blur(40px)' && /rgba\(214, 110, 150/.test(glow.bg), JSON.stringify(glow));
+      // 精修後主視覺沒有光暈層了（原本這裡檢查深色模式的光暈用哪一組顏色）：改成確認深色模式下照片照常顯示、
+      // 沒有殘留的光暈元素，頁首也不再用半透明＋模糊
+      const heroDark = await page.evaluate(() => {
+        const img = document.querySelector('.hero__img'); const b = img.getBoundingClientRect();
+        const hs = getComputedStyle(document.querySelector('.site-header'));
+        return { glow: !!document.querySelector('.hero__glow'), w: Math.round(b.width), loaded: img.complete && img.naturalWidth > 0, headerBlur: hs.backdropFilter || hs.webkitBackdropFilter || 'none', headerBg: hs.backgroundColor };
+      });
+      ok(`dark mode hero shows the photo with no glow layer; header is solid @${width}`, !heroDark.glow && heroDark.loaded && heroDark.w >= 200 && heroDark.headerBlur === 'none' && !/rgba\(/.test(heroDark.headerBg), JSON.stringify(heroDark));
       // 深色模式的分享按鈕與狀態文字
       await page.locator('#share-btn').scrollIntoViewIfNeeded();
       await page.locator('#share-btn').focus();
@@ -656,6 +691,18 @@ async function switchLang(page, lang) {
       await page.screenshot({ path: path.join(outDir, `reduced-motion-375.png`), fullPage: false });
       const anim = await page.evaluate(() => Array.from(document.querySelectorAll('*')).filter(el => { const s = getComputedStyle(el); return (s.animationName && s.animationName !== 'none' && parseFloat(s.animationDuration) > 0.011) || (s.transitionProperty !== 'none' && s.transitionProperty !== 'all 0s' && parseFloat(s.transitionDuration) > 0.011); }).map(el => el.tagName + (el.className ? '.' + String(el.className).split(' ')[0] : '')).slice(0, 10));
       ok('reduced motion disables animations/transitions', anim.length === 0, JSON.stringify(anim));
+      // 「減少動態效果」開啟時，倒數不顯示每秒跳動的秒數；日、時、分照常顯示（A-07，網站主人 2026-11-11 決定採用）
+      const rmUnits = await page.evaluate(() => Array.from(document.querySelectorAll('.countdown__tile')).filter(t => { const b = t.getBoundingClientRect(); return b.width > 0 && b.height > 0; }).map(t => t.querySelector('.countdown__num').getAttribute('data-unit')));
+      ok('reduced motion: countdown shows days, hours and minutes but not the ticking seconds', rmUnits.join(',') === 'days,hours,minutes', rmUnits.join(','));
+      await context.close();
+    }
+    {
+      // 一般情況（沒有要求減少動態）：四個單位都在
+      const { context, page } = await newPage(browser, { width: 375 });
+      await page.goto(baseUrl, { waitUntil: 'load' });
+      await settle(page);
+      const units = await page.evaluate(() => Array.from(document.querySelectorAll('.countdown__tile')).filter(t => { const b = t.getBoundingClientRect(); return b.width > 0 && b.height > 0; }).map(t => t.querySelector('.countdown__num').getAttribute('data-unit')));
+      ok('countdown shows days, hours, minutes and seconds by default', units.join(',') === 'days,hours,minutes,seconds', units.join(','));
       await context.close();
     }
 
@@ -736,14 +783,34 @@ async function switchLang(page, lang) {
         ok(`header is one row (68px) before app.js fills the nav @${width}`, hh === 68, String(hh));
         await context.close();
       }
-      // 手機：Tab 走過導覽六項時，每顆膠囊都完整露出、不在右側淡出區底下；按 Enter 後下一個 Tab 進入目標區塊
+      // 手機與平板也一樣：擋掉 app.js 的骨架和正常載入後相比，品牌列、導覽列、主視覺文字的位置與高度一致（差 2px 以內），
+      // 第一次繪製時下一區的底色不會先出現在畫面裡再被推走（精修時補上的預留高度；CLS）
+      for (const [width, height] of [[375, 812], [768, 1024]]) {
+        const probe = () => {
+          const b = (sel) => { const r = document.querySelector(sel).getBoundingClientRect(); return [Math.round(r.top), Math.round(r.height)]; };
+          return { header: b('.site-header'), nav: b('.site-nav'), heroText: b('.hero__text'), birthdayTop: b('#birthday')[0], vh: window.innerHeight };
+        };
+        const states = {};
+        for (const mode of ['skeleton', 'filled']) {
+          const { context, page } = await newPage(browser, { width, height, reducedMotion: 'reduce' });
+          if (mode === 'skeleton') await page.route('**/app.js', r => r.abort());
+          await page.goto(baseUrl, { waitUntil: 'load' });
+          await page.waitForTimeout(400);
+          states[mode] = await page.evaluate(probe);
+          await context.close();
+        }
+        const near = (a, b) => Math.abs(a[0] - b[0]) <= 2 && Math.abs(a[1] - b[1]) <= 2;
+        ok(`header, nav row and hero text keep their place when the text is filled in @${width}`, near(states.skeleton.header, states.filled.header) && near(states.skeleton.nav, states.filled.nav) && near(states.skeleton.heroText, states.filled.heroText), JSON.stringify(states));
+        ok(`the next section's band is not in the first viewport before the profile is filled in @${width}`, states.skeleton.birthdayTop >= states.skeleton.vh, JSON.stringify({ top: states.skeleton.birthdayTop, vh: states.skeleton.vh }));
+      }
+      // 手機：Tab 走過導覽七項時，每顆膠囊都完整露出、不在右側淡出區底下；按 Enter 後下一個 Tab 進入目標區塊
       for (const width of [375, 1280]) {
         const { context, page } = await newPage(browser, { width, height: width < 700 ? 812 : 900 });
         await page.goto(baseUrl, { waitUntil: 'load' });
         await settle(page);
         for (let i = 0; i < 4; i++) await page.keyboard.press('Tab');   // skip link → brand → ja → zh
         const pos = [];
-        for (let i = 0; i < 6; i++) {
+        for (let i = 0; i < 7; i++) {
           await page.keyboard.press('Tab');
           await page.waitForTimeout(150);
           pos.push(await page.evaluate(() => { const r = document.activeElement.getBoundingClientRect(); return { t: document.activeElement.textContent, l: Math.round(r.left), r: Math.round(r.right), vw: window.innerWidth }; }));
@@ -803,6 +870,359 @@ async function switchLang(page, lang) {
         await context.close();
       }
     } else warn('axe-core not installed; skipped');
+
+    // ---------- letter.html（彩花への手紙）＋首頁的入口 ----------
+    const indexCsp = report.info.security ? report.info.security.csp : null;   // 信頁的 CSP 必須和首頁一字不差
+    const letterUrl = baseUrl.replace(/\/?$/, '/') + 'letter.html';
+    async function settleLetter(page) {
+      await page.waitForFunction(() => document.querySelectorAll('.letter__p').length >= 10 && document.querySelector('.letter__signature').textContent.length > 0, null, { timeout: 15000 });
+      await page.waitForTimeout(300);
+    }
+    for (const width of [375, 768, 1280]) {
+      const { context, page } = await newPage(browser, { width, height: width < 700 ? 812 : 900 });
+      await page.goto(letterUrl, { waitUntil: 'load' });
+      await settleLetter(page);
+      ok(`letter: default lang is ja @${width}`, (await page.evaluate(() => document.documentElement.lang)) === 'ja');
+      const over = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, iw: window.innerWidth }));
+      ok(`letter: no horizontal overflow @${width} (ja)`, over.sw <= over.iw, JSON.stringify(over));
+      await page.screenshot({ path: path.join(outDir, `letter-ja-${width}.png`), fullPage: true });
+      const jaText = await collectText(page);
+      const jaTitle = await page.title();
+      // 閱讀寬度：600px 以上每行約 30～36 個日文字
+      const measure = await page.evaluate(() => { const p = document.querySelector('.letter__p'); const cs = getComputedStyle(p); return { chars: p.getBoundingClientRect().width / parseFloat(cs.fontSize), lh: parseFloat(cs.lineHeight) / parseFloat(cs.fontSize) }; });
+      if (width >= 600) ok(`letter: 30–36 characters per line @${width}`, measure.chars >= 30 && measure.chars <= 36, JSON.stringify(measure));
+      ok(`letter: line-height at least 2 @${width}`, measure.lh >= 2, JSON.stringify(measure));
+      // 準備過的三句話：換行只發生在「小塊」之間（例如不會把「だいすき」拆成兩行），畫面上的字和原文一樣
+      const words = await page.evaluate(() => ({
+        split: Array.from(document.querySelectorAll('.letter__chunk')).filter(c => c.getBoundingClientRect().height > parseFloat(getComputedStyle(c).lineHeight) * 1.5).map(c => c.textContent),
+        text: Array.from(document.querySelectorAll('.letter__word')).map(li => li.textContent),
+        paragraphBreaks: Array.from(document.querySelectorAll('.letter__p')).filter(p => p.textContent.indexOf('\n') !== -1 && getComputedStyle(p).whiteSpace.indexOf('pre-line') === -1 && getComputedStyle(p).whiteSpaceCollapse !== 'preserve-breaks').length
+      }));
+      ok(`letter: prepared lines wrap only between phrases @${width}`, words.split.length === 0, JSON.stringify(words.split));
+      ok(`letter: prepared lines read exactly as written @${width}`, words.text.length === 3 && words.text[1] === 'いま、じんせいでいちばんだいすきなのはアヤカ！', JSON.stringify(words.text));
+      ok(`letter: line breaks inside paragraphs are rendered @${width}`, words.paragraphBreaks === 0, String(words.paragraphBreaks));
+      const structure = await page.evaluate(() => ({
+        h1: document.querySelectorAll('h1').length,
+        h2: document.querySelectorAll('.letter__body h2').length,
+        sections: Array.from(document.querySelectorAll('.letter__section')).map(s => s.id + ':' + s.getAttribute('aria-labelledby')),
+        wordsLang: (document.querySelector('.letter__words') || {}).getAttribute && document.querySelector('.letter__words').getAttribute('lang'),
+        wordsRole: (document.querySelector('.letter__words') || {}).getAttribute && document.querySelector('.letter__words').getAttribute('role'),
+        signature: document.querySelector('.letter__signature').textContent,
+        navCount: document.querySelectorAll('.site-nav, .site-nav__list a').length,
+        brandHref: (document.querySelector('.site-header .brand') || {}).getAttribute && document.querySelector('.site-header .brand').getAttribute('href'),
+        headerPosition: getComputedStyle(document.querySelector('.site-header')).position,
+        robots: (document.querySelector('meta[name="robots"]') || {}).content || null,
+        footerPhoto: !!document.querySelector('#footer-photo'),
+        paperFont: getComputedStyle(document.querySelector('.letter__paper')).fontFamily,
+        links: Array.from(document.querySelectorAll('.letter__body a')).map(a => a.getAttribute('href')),
+        back: (document.querySelector('#letter-back') || {}).getAttribute && document.querySelector('#letter-back').getAttribute('href'),
+        empties: Array.from(document.querySelectorAll('#letter-title, #letter-lead, #letter-salutation, #letter-date, #letter-signature, #letter-back, .letter__h, .letter__p')).filter(n => !n.textContent.trim()).length,
+      }));
+      if (width === 375) {
+        ok('letter: one h1 and one h2 per section', structure.h1 === 1 && structure.h2 === structure.sections.length && structure.sections.length >= 3, JSON.stringify(structure.sections));
+        ok('letter: prepared Japanese lines are marked lang="ja" in a list', structure.wordsLang === 'ja' && structure.wordsRole === 'list');
+        ok('letter: signature keeps YU HONG', /YU HONG/.test(structure.signature), structure.signature);
+        ok('letter: no navigation bar, header not sticky, brand links back to index.html', structure.navCount === 0 && structure.brandHref === 'index.html' && structure.headerPosition === 'static', JSON.stringify({ nav: structure.navCount, brand: structure.brandHref, pos: structure.headerPosition }));
+        ok('letter: meta robots noindex', /noindex/.test(structure.robots || ''), String(structure.robots));
+        ok('letter: no photo notice in the footer', structure.footerPhoto === false);
+        ok('letter: paper uses the serif (mincho) stack', /Mincho|Serif|serif|PMingLiU|Songti/.test(structure.paperFont), structure.paperFont);
+        ok('letter: in-letter links are relative and point at the home page', structure.links.length >= 1 && structure.links.every(h => /^index\.html#[a-z]+$/.test(h)) && structure.back === 'index.html', JSON.stringify(structure.links));
+        ok('letter: no empty text slots after rendering', structure.empties === 0, String(structure.empties));
+        report.info.letterStructure = structure;
+      }
+
+      await switchLang(page, 'zh');
+      ok(`letter: lang attr becomes zh-Hant @${width}`, (await page.evaluate(() => document.documentElement.lang)) === 'zh-Hant');
+      const over2 = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, iw: window.innerWidth }));
+      ok(`letter: no horizontal overflow @${width} (zh)`, over2.sw <= over2.iw, JSON.stringify(over2));
+      await page.screenshot({ path: path.join(outDir, `letter-zh-${width}.png`), fullPage: true });
+      const zhText = await collectText(page);
+      const zhTitle = await page.title();
+      ok(`letter: title changes with language @${width}`, jaTitle !== zhTitle && /手紙|信/.test(zhTitle), `${jaTitle} / ${zhTitle}`);
+      if (width === 375) {
+        const zhSet = new Set(zhText);
+        const leftover = jaText.filter(t => zhSet.has(t) && /[぀-ヿ]/.test(t) && !t.startsWith('@'));
+        ok('letter: no Japanese-kana text left after switching to zh (except lines marked lang="ja")', leftover.length === 0, JSON.stringify(leftover));
+        const zhWords = await page.evaluate(() => Array.from(document.querySelectorAll('.letter__words[lang="ja"] li')).length);
+        ok('letter: prepared Japanese lines stay in Japanese in the zh version', zhWords >= 1, String(zhWords));
+        // 語言設定與首頁共用：在手紙頁切成中文後，回到首頁也是中文
+        await page.goto(baseUrl, { waitUntil: 'load' });
+        await settle(page);
+        ok('letter: language choice is shared with the home page', (await page.evaluate(() => document.documentElement.lang)) === 'zh-Hant');
+        await page.goto(letterUrl, { waitUntil: 'load' });
+        await settleLetter(page);
+        ok('letter: language persists after reload', (await page.evaluate(() => document.documentElement.lang)) === 'zh-Hant');
+        await switchLang(page, 'ja');
+      }
+
+      const sec = await page.evaluate(() => ({
+        inlineScripts: Array.from(document.scripts).filter(s => !s.src).length,
+        styleEls: document.querySelectorAll('style').length,
+        styleAttrs: document.querySelectorAll('[style]').length,
+        onAttrs: Array.from(document.querySelectorAll('*')).filter(el => Array.from(el.attributes).some(a => /^on/i.test(a.name))).length,
+        csp: (document.querySelector('meta[http-equiv="Content-Security-Policy"]') || {}).content || null,
+        referrer: (document.querySelector('meta[name="referrer"]') || {}).content || null,
+        external: Array.from(document.querySelectorAll('script[src],link[href]:not([rel~="canonical"]):not([rel~="alternate"]),img[src],source[srcset]')).map(e => e.src || e.href || e.srcset).filter(u => u && !u.startsWith(location.origin)),
+      }));
+      if (width === 375) {
+        report.info.letterSecurity = sec;
+        ok('letter: no inline scripts/styles/on* attributes', sec.inlineScripts === 0 && sec.styleEls === 0 && sec.styleAttrs === 0 && sec.onAttrs === 0, JSON.stringify(sec));
+        ok('letter: CSP meta is the same strict policy as index.html', !!sec.csp && sec.csp === indexCsp && /trusted-types 'none'/.test(sec.csp), sec.csp + ' vs ' + indexCsp);
+        ok('letter: referrer meta no-referrer', sec.referrer === 'no-referrer', sec.referrer);
+        ok('letter: no external resources', sec.external.length === 0, JSON.stringify(sec.external));
+      }
+      const csp = await page.evaluate(() => window.__cspViolations);
+      ok(`letter: no CSP violations @${width}`, csp.length === 0, JSON.stringify(csp));
+      ok(`letter: no console errors @${width}`, page.__errors.length === 0, JSON.stringify(page.__errors));
+      await context.close();
+    }
+
+    // 首頁的入口：留言區下方的小卡，點了會到 letter.html；語言設定帶過去
+    for (const width of [375, 1280]) {
+      const { context, page } = await newPage(browser, { width, height: width < 700 ? 812 : 900 });
+      await page.goto(baseUrl, { waitUntil: 'load' });
+      await settle(page);
+      const entry = await page.evaluate(() => {
+        const a = document.querySelector('#messages a.letter-entry');
+        const txt = (sel) => (a && a.querySelector(sel) ? a.querySelector(sel).textContent.trim() : '');
+        return a ? { label: !!document.querySelector('.letter-entry__eyebrow, .letter__kicker'), title: txt('.letter-entry__title'), text: txt('.letter-entry__text'), cta: txt('.letter-entry__cta'), href: a.getAttribute('href'), count: document.querySelectorAll('.letter-entry').length, nav: document.querySelectorAll('.site-nav__list a').length, width: a.getBoundingClientRect().width } : null;
+      });
+      // 入口小卡原本還有「LETTER」英文小標；它和標題意思重複，已拿掉（網站主人 2026-11-11 交由設計決定）
+      ok(`home: letter entry card sits in the messages section with title, text, CTA and href, and no English label @${width}`, !!entry && !entry.label && entry.title && entry.text && entry.cta && entry.href === 'letter.html' && entry.count === 1, JSON.stringify(entry));
+      if (width === 1280) ok('home: letter entry card is at most 560px wide', entry && entry.width <= 560, String(entry && entry.width));
+      // 合言葉のページ（私密區，另一個網站）的入口：data.js 的 site.roomUrl 還沒填時不顯示；填了才出現一行小字連結
+      const room = await page.evaluate(() => {
+        const p = document.getElementById('room-entry');
+        const a = p && p.querySelector('a');
+        const url = window.SITE_DATA.site.roomUrl;
+        return p ? { configured: !!url, hidden: p.hidden, visible: p.getClientRects().length > 0, href: a ? a.getAttribute('href') : null, text: a ? a.textContent.trim() : '', rel: a ? a.getAttribute('rel') : null } : null;
+      });
+      ok(`home: the room entrance stays hidden until site.roomUrl is set; when set it is an https link carrying the language @${width}`,
+        !!room && (room.configured
+          ? (!room.hidden && room.visible && /^https:\/\/[^/]+\/\?lang=ja$/.test(room.href || '') && !!room.text && room.rel === 'nofollow')
+          : (room.hidden && !room.visible && !room.href)), JSON.stringify(room));
+      if (width === 375) ok('home: the letter has no navigation item of its own (seven section links)', entry && entry.nav === 7, String(entry && entry.nav));
+      await page.locator('#messages').scrollIntoViewIfNeeded();
+      await page.waitForTimeout(300);
+      await page.locator('#messages').screenshot({ path: path.join(outDir, `letter-entry-${width}.png`) });
+      await switchLang(page, 'zh');
+      await page.locator('#messages a.letter-entry').click();
+      await page.waitForURL(/letter\.html$/, { timeout: 10000 });
+      await settleLetter(page);
+      ok(`home: entry link opens letter.html in the chosen language @${width}`, (await page.evaluate(() => document.documentElement.lang)) === 'zh-Hant');
+      ok(`home→letter: no console errors @${width}`, page.__errors.length === 0, JSON.stringify(page.__errors));
+      await context.close();
+    }
+
+    // 手紙頁：深色模式、減少動態、停用 JavaScript、鍵盤焦點
+    for (const width of [375, 1280]) {
+      const { context, page } = await newPage(browser, { width, height: width < 700 ? 812 : 900, colorScheme: 'dark' });
+      await page.goto(letterUrl, { waitUntil: 'load' });
+      await settleLetter(page);
+      await page.screenshot({ path: path.join(outDir, `letter-dark-ja-${width}.png`), fullPage: true });
+      const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+      ok(`letter: dark mode changes body background @${width}`, !/rgb\(255, 255, 255\)/.test(bg), bg);
+      ok(`letter: no console errors dark @${width}`, page.__errors.length === 0, JSON.stringify(page.__errors));
+      await context.close();
+    }
+    {
+      const { context, page } = await newPage(browser, { width: 375, reducedMotion: 'reduce' });
+      await page.goto(letterUrl, { waitUntil: 'load' });
+      await settleLetter(page);
+      const anim = await page.evaluate(() => Array.from(document.querySelectorAll('*')).filter(el => { const s = getComputedStyle(el); return (s.animationName && s.animationName !== 'none' && parseFloat(s.animationDuration) > 0.011) || (s.transitionProperty !== 'none' && s.transitionProperty !== 'all 0s' && parseFloat(s.transitionDuration) > 0.011); }).map(el => el.tagName + (el.className ? '.' + String(el.className).split(' ')[0] : '')).slice(0, 10));
+      ok('letter: reduced motion disables animations/transitions', anim.length === 0, JSON.stringify(anim));
+      await page.keyboard.press('Tab');
+      const first = await page.evaluate(() => ({ tag: document.activeElement.tagName, href: document.activeElement.getAttribute('href') }));
+      ok('letter: first Tab lands on the skip link', first.tag === 'A' && /#main/.test(first.href || ''), JSON.stringify(first));
+      await page.keyboard.press('Enter');
+      await page.waitForTimeout(200);
+      await page.keyboard.press('Tab');
+      const after = await page.evaluate(() => { const a = document.activeElement; const r = a.getBoundingClientRect(); return { text: a.textContent.trim().slice(0, 30), inMain: !!a.closest('main'), outline: getComputedStyle(a).outlineStyle }; });
+      ok('letter: after the skip link, Tab reaches the first link in the letter', after.inMain, JSON.stringify(after));
+      await page.screenshot({ path: path.join(outDir, 'letter-focus-375.png'), fullPage: false });
+      await context.close();
+    }
+    for (const width of [375, 1280]) {
+      const context = await browser.newContext({ viewport: { width, height: width < 700 ? 812 : 900 }, deviceScaleFactor: scale, javaScriptEnabled: false, locale: 'ja-JP' });
+      const page = await context.newPage();
+      await page.goto(letterUrl, { waitUntil: 'load' });
+      await page.waitForTimeout(600);
+      const r = await page.evaluate(() => {
+        const vis = (el) => { if (!el) return false; const b = el.getBoundingClientRect(); return b.width > 0 && b.height > 0 && getComputedStyle(el).visibility !== 'hidden'; };
+        return { notice: Array.from(document.querySelectorAll('.noscript')).filter(vis).length, mark: vis(document.querySelector('.brand__mark')), letter: vis(document.querySelector('.letter')), footer: vis(document.querySelector('.site-footer p')), sw: document.documentElement.scrollWidth, iw: window.innerWidth };
+      });
+      ok(`letter no-JS: only the notice and the brand mark remain @${width}`, r.notice >= 2 && r.mark && !r.letter && !r.footer && r.sw <= r.iw, JSON.stringify(r));
+      await context.close();
+    }
+    {
+      // letter-data.js 壞掉時：和首頁一樣退回 nojs.css（不剩下空白便箋），而且沒有 CSP 違規
+      const { context, page } = await newPage(browser, { width: 375 });
+      await page.route('**/letter-data.js', r => r.fulfill({ status: 200, contentType: 'application/javascript', body: 'window.LETTER_DATA = { broken: ,' }));
+      await page.goto(letterUrl, { waitUntil: 'load' });
+      await page.waitForTimeout(800);
+      const r = await page.evaluate(() => { const vis = (sel) => Array.from(document.querySelectorAll(sel)).some(el => { const b = el.getBoundingClientRect(); return b.width > 0 && b.height > 0; }); return { nojs: !!document.querySelector('link[href="nojs.css"]'), letter: vis('.letter'), paper: vis('.letter__paper'), mark: vis('.brand__mark') }; });
+      ok('letter: broken letter-data.js falls back to the no-JS layout (no empty paper)', r.nojs && !r.letter && !r.paper && r.mark, JSON.stringify(r));
+      const csp = await page.evaluate(() => window.__cspViolations);
+      ok('letter: broken letter-data.js fallback causes no CSP violations', csp.length === 0, JSON.stringify(csp));
+      await context.close();
+    }
+    if (axeSource) {
+      for (const scheme of ['light', 'dark']) {
+        for (const width of [375, 1280]) {
+          const { context, page } = await newPage(browser, { width, height: width < 700 ? 812 : 900, colorScheme: scheme, bypassCSP: true });
+          await page.goto(letterUrl, { waitUntil: 'load' });
+          await settleLetter(page);
+          await page.evaluate(axeSource);
+          const res = await page.evaluate(async () => { const r = await window.axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice'] } }); return r.violations.map(v => ({ id: v.id, impact: v.impact, help: v.help, nodes: v.nodes.slice(0, 5).map(n => n.target.join(' ')) })); });
+          report.info[`axe_letter_${scheme}_${width}`] = res;
+          ok(`letter axe: no serious/critical violations (${scheme} @${width})`, res.filter(v => ['serious', 'critical'].includes(v.impact)).length === 0, JSON.stringify(res.filter(v => ['serious', 'critical'].includes(v.impact))));
+          if (res.length) warn(`letter axe ${scheme} @${width} (all impacts)`, JSON.stringify(res));
+          await context.close();
+        }
+      }
+    }
+    /* ---------- 內容補充（2026-11-14）：個人資料、興趣、作品與訪談、年表連結、出處、官方連結 ---------- */
+    for (const width of [375, 768, 1280]) {
+      for (const lang of ['ja', 'zh']) {
+        const { context, page } = await newPage(browser, { width, height: width < 700 ? 812 : 900 });
+        await page.goto(baseUrl, { waitUntil: 'load' });
+        if (lang === 'zh') {
+          await page.evaluate(() => localStorage.setItem(window.SITE_DATA.site.storageKey, 'zh'));
+          await page.goto(baseUrl, { waitUntil: 'load' });
+        }
+        await settle(page);
+        const tag = `@${width} ${lang}`;
+        const c = await page.evaluate(() => {
+          const D = window.SITE_DATA;
+          const txt = (el) => (el ? el.textContent.trim() : '');
+          const all = (sel, root) => Array.from((root || document).querySelectorAll(sel));
+          const dates = all('#timeline-list time[datetime]').map((t) => t.getAttribute('datetime'));
+          const ext = all('a[href]').filter((a) => a.origin !== location.origin);
+          return {
+            closedByDefault: all('details.sources').every((d) => !d.open),
+            profileRows: all('#profile-list .profile__row').length,
+            profileExpected: D.profile.filter((r) => r.value != null).length,
+            placeholders: all('#profile .profile__row--placeholder, #profile .profile__value--placeholder').length,
+            profileText: txt(document.querySelector('#profile-list')),
+            hobbyRows: all('#hobbies-list .profile__row').length,
+            hobbyExpected: D.hobbies.items.length,
+            hobbyLead: txt(document.querySelector('#profile-hobbies .block__lead')),
+            works: all('#works-list .entry').map((e) => ({ id: e.id, title: txt(e.querySelector('h4')), metas: all('.entry__meta', e).length, text: txt(e.querySelector('.entry__text')).length, links: all('.entry__links a', e).length })),
+            worksExpected: D.works.map((w) => ({ id: 'work-' + w.id, links: 1 + w.sources.length })),
+            interviews: all('#interviews-list .entry').map((e) => ({ title: txt(e.querySelector('h4')), texts: all('.entry__text', e).length, links: all('.entry__links a', e).length })),
+            interviewsExpected: D.interviews.length,
+            dates,
+            timelineExpected: D.timeline.filter((t) => !t.placeholder).length,
+            tlLinks: all('.timeline__link').map((a) => ({ href: a.getAttribute('href'), target: !!document.querySelector(a.getAttribute('href')), label: a.getAttribute('aria-label') })),
+            tlLinksExpected: D.timeline.filter((t) => t.link).length,
+            sourceLists: ['#profile-sources-list', '#timeline-sources-list'].map((s) => all(s + ' li').length),
+            summaries: all('.sources__summary').map(txt),
+            links: all('#links-list a').map((a) => a.getAttribute('href')),
+            linksExpected: D.links.map((l) => l.url),
+            handle: txt(document.querySelector('.links__handle')),
+            linksNote: txt(document.querySelector('#links-note')),
+            noteLink: !!document.querySelector('#links-note a[target="_blank"]'),
+            ext: ext.map((a) => ({ href: a.href, target: a.target, rel: a.rel, hint: txt(a.querySelector('.visually-hidden')) })),
+            blank: all('a[target="_blank"]').length,
+            emptyUi: all('main [data-ui]').filter((n) => !txt(n)).map((n) => n.getAttribute('data-ui')),
+            emptyNew: all('.block__title, .block__lead, .entry__title, .entry__meta, .entry__text, .links__title, .sources__summary').filter((n) => !txt(n)).length,
+            navLinks: all('.site-nav__list a').length,
+            navTops: Array.from(new Set(all('.site-nav__list a').map((a) => Math.round(a.getBoundingClientRect().top)))).length,
+            headings: all('#works h2, #works h3, #works h4, #profile h2, #profile h3').map((h) => h.tagName).join(' '),
+          };
+        });
+        ok(`profile: only filled rows are shown, no placeholders ${tag}`, c.profileRows === c.profileExpected && c.profileRows >= 9 && c.placeholders === 0 && !/確認中|待補/.test(c.profileText), JSON.stringify({ rows: c.profileRows, expected: c.profileExpected, placeholders: c.placeholders }));
+        ok(`profile: blood type, hometown, phrase, NIZOO and the full debut date are shown ${tag}`, /A\s?型/.test(c.profileText) && /東京都/.test(c.profileText) && /NiziUのふわふわビューティー/.test(c.profileText) && /ANO（アノ）/.test(c.profileText) && /2020\s?年\s?12\s?月\s?2\s?日/.test(c.profileText) && !/身長|身高|ニックネーム|暱稱/.test(c.profileText), c.profileText.slice(0, 120));
+        ok(`hobbies: dated block with its rows ${tag}`, c.hobbyRows === c.hobbyExpected && /2025\s?年\s?9\s?月/.test(c.hobbyLead), JSON.stringify({ rows: c.hobbyRows, lead: c.hobbyLead }));
+        ok(`works: every work has an anchor id, title, two meta lines, text and its links ${tag}`, c.works.length === c.worksExpected.length && c.works.every((w, i) => w.id === c.worksExpected[i].id && w.title && w.metas === 2 && w.text > 20 && w.links === c.worksExpected[i].links), JSON.stringify(c.works));
+        ok(`interviews: every summary has a title, text and a source link ${tag}`, c.interviews.length === c.interviewsExpected && c.interviews.every((i) => i.title && i.texts >= 1 && i.links >= 1), JSON.stringify(c.interviews));
+        ok(`timeline: ${c.timelineExpected} dated entries in ascending order with no duplicate dates ${tag}`, c.dates.length === c.timelineExpected && c.dates.length >= 18 && c.dates.join() === c.dates.slice().sort().join() && new Set(c.dates).size === c.dates.length, c.dates.join(' '));
+        ok(`timeline: links to the works section point at existing entries and name the song ${tag}`, c.tlLinks.length === c.tlLinksExpected && c.tlLinks.every((l) => /^#work-/.test(l.href) && l.target && l.label && l.label.length > 4), JSON.stringify(c.tlLinks));
+        ok(`sources: both lists are collapsed by default, labelled and filled ${tag}`, c.closedByDefault && c.sourceLists.every((n) => n >= 5) && c.summaries.length === 2 && c.summaries.every((s) => s === (lang === 'zh' ? '資料來源' : '出典')), JSON.stringify({ closed: c.closedByDefault, lists: c.sourceLists, summaries: c.summaries }));
+        ok(`official links: site and Instagram, handle outside the underlined link, account source noted ${tag}`, c.links.join() === c.linksExpected.join() && c.links.length >= 2 && /^@/.test(c.handle) && /SPUR/.test(c.linksNote) && c.noteLink, JSON.stringify({ links: c.links, handle: c.handle, note: c.linksNote }));
+        ok(`external links: https, new tab, rel="noopener noreferrer", screen-reader hint ${tag}`, c.ext.length >= 20 && c.ext.length === c.blank && c.ext.every((a) => /^https:\/\//.test(a.href) && a.target === '_blank' && /\bnoopener\b/.test(a.rel) && /\bnoreferrer\b/.test(a.rel) && a.hint.length > 3), JSON.stringify(c.ext.filter((a) => !(a.target === '_blank' && /\bnoopener\b/.test(a.rel) && /\bnoreferrer\b/.test(a.rel))).slice(0, 3)) + ` (${c.ext.length} external, ${c.blank} target=_blank)`);
+        ok(`no missing strings in the new blocks ${tag}`, c.emptyUi.length === 0 && c.emptyNew === 0, JSON.stringify({ ui: c.emptyUi, empty: c.emptyNew }));
+        ok(`heading levels: h2 > h3 > h4 in profile and works ${tag}`, c.headings === 'H2 H3 H2 H3 H4 H4 H3 H4 H4', c.headings);
+        ok(`nav: seven items${width >= 900 ? ' on one row' : ''} ${tag}`, c.navLinks === 7 && (width < 900 || c.navTops === 1), JSON.stringify({ links: c.navLinks, rows: c.navTops }));
+
+        // 展開兩個出處清單之後：沒有橫向捲動，連結與文字都在畫面內
+        await page.evaluate(() => document.querySelectorAll('details.sources').forEach((d) => { d.open = true; }));
+        const o = await page.evaluate(() => {
+          const vw = document.documentElement.clientWidth;
+          const out = Array.from(document.querySelectorAll('.entry__title, .entry__meta, .entry__text, .entry__links a, .sources__list li, .sources__list a, .links__list a, .links__handle, .links__note, #hobbies-list .profile__value')).filter((n) => { const b = n.getBoundingClientRect(); return b.width > 0 && (b.right > vw + 0.5 || b.left < -0.5); }).map((n) => n.className + ':' + n.textContent.slice(0, 20));
+          return { sw: document.documentElement.scrollWidth, vw, out };
+        });
+        ok(`new content fits the viewport with the source lists open ${tag}`, o.sw <= o.vw && o.out.length === 0, JSON.stringify(o));
+        if (lang === 'ja' || width !== 768) {
+          for (const [sel, name] of [['#profile', 'profile'], ['#works', 'works'], ['#about', 'about'], ['#timeline-sources', 'timeline-sources']]) {
+            await page.locator(sel).scrollIntoViewIfNeeded();
+            await page.locator(sel).screenshot({ path: path.join(outDir, `content-${name}-${lang}-${width}.png`) });
+          }
+        }
+        ok(`new content: no console errors or CSP violations ${tag}`, page.__errors.length === 0 && (await page.evaluate(() => window.__cspViolations)).length === 0, JSON.stringify(page.__errors.slice(0, 3)));
+        await context.close();
+      }
+    }
+    for (const width of [375, 1280]) {
+      // 鍵盤操作：出處清單用 Enter 展開／收合、有焦點框；切換語言後維持展開；年表的連結會把焦點帶到那首歌，而且不被頁首蓋住
+      const { context, page } = await newPage(browser, { width, height: width < 700 ? 812 : 900 });
+      await page.goto(baseUrl, { waitUntil: 'load' });
+      await settle(page);
+      await page.keyboard.press('Tab');   // 先用鍵盤操作一次，瀏覽器才會把之後的焦點當成鍵盤焦點（:focus-visible）
+      await page.evaluate(() => document.querySelector('#profile-sources summary').focus());
+      const ring = await page.evaluate(() => { const s = document.querySelector('#profile-sources summary'); const cs = getComputedStyle(s); return { focused: document.activeElement === s, visible: s.matches(':focus-visible'), style: cs.outlineStyle, width: cs.outlineWidth }; });
+      ok(`sources: the summary takes keyboard focus with a visible ring @${width}`, ring.focused && ring.visible && ring.style !== 'none' && parseFloat(ring.width) >= 2, JSON.stringify(ring));
+      await page.keyboard.press('Enter');
+      const opened = await page.evaluate(() => { const d = document.querySelector('#profile-sources'); const a = d.querySelector('li a'); return { open: d.open, linkVisible: !!a && a.getBoundingClientRect().height > 0 }; });
+      ok(`sources: Enter opens the list @${width}`, opened.open && opened.linkVisible, JSON.stringify(opened));
+      await page.evaluate(() => document.querySelector('.lang-switch__btn[data-lang="zh"]').click());
+      const kept = await page.evaluate(() => { const d = document.querySelector('#profile-sources'); return { open: d.open, summary: d.querySelector('summary').textContent.trim(), first: (d.querySelector('li') || {}).textContent }; });
+      ok(`sources: the list stays open and is re-rendered when the language changes @${width}`, kept.open && kept.summary === '資料來源' && /藝名/.test(kept.first || ''), JSON.stringify(kept));
+      await page.evaluate(() => document.querySelector('.lang-switch__btn[data-lang="ja"]').click());
+      await page.evaluate(() => document.querySelector('#profile-sources summary').focus());
+      await page.keyboard.press('Enter');
+      ok(`sources: Enter closes the list again @${width}`, await page.evaluate(() => !document.querySelector('#profile-sources').open));
+
+      const link = page.locator('.timeline__link').first();
+      await link.scrollIntoViewIfNeeded();
+      await link.focus();
+      await page.keyboard.press('Enter');
+      await page.waitForTimeout(1200);   // 平滑捲動
+      const jump = await page.evaluate(() => {
+        const target = document.querySelector(location.hash || '#none');
+        if (!target) { return { hash: location.hash }; }
+        const b = target.getBoundingClientRect();
+        const fixed = Array.from(document.querySelectorAll('.site-header, .site-nav')).filter((n) => { const p = getComputedStyle(n).position; return p === 'fixed' || p === 'sticky'; });
+        const covered = Math.max(0, ...fixed.map((n) => n.getBoundingClientRect().bottom));
+        return { hash: location.hash, top: Math.round(b.top), covered: Math.round(covered), vh: window.innerHeight, active: document.activeElement === target, outline: getComputedStyle(target).outlineStyle };
+      });
+      ok(`timeline link: jumps to the song, below the fixed header, focus moves there without a ring @${width}`, /^#work-/.test(jump.hash) && jump.top >= jump.covered - 1 && jump.top < jump.vh * 0.6 && jump.active && jump.outline === 'none', JSON.stringify(jump));
+      await context.close();
+    }
+    {
+      // 減少動態效果：出處清單的小箭頭不做轉場
+      const { context, page } = await newPage(browser, { width: 375, reducedMotion: 'reduce' });
+      await page.goto(baseUrl, { waitUntil: 'load' });
+      await settle(page);
+      const d = await page.evaluate(() => getComputedStyle(document.querySelector('.sources__summary'), '::before').transitionDuration);
+      ok('reduced motion: the sources chevron does not animate', /^0s(, 0s)*$/.test(d), d);
+      await context.close();
+    }
+    if (axeSource) {
+      for (const scheme of ['light', 'dark']) {
+        for (const width of [375, 1280]) {
+          const { context, page } = await newPage(browser, { width, height: width < 700 ? 812 : 900, colorScheme: scheme, bypassCSP: true });
+          await page.goto(baseUrl, { waitUntil: 'load' });
+          await settle(page);
+          await page.evaluate(() => document.querySelectorAll('details.sources').forEach((d) => { d.open = true; }));
+          await page.evaluate(axeSource);
+          const res = await page.evaluate(async () => { const r = await window.axe.run(document.querySelector('main'), { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice'] } }); return r.violations.map(v => ({ id: v.id, impact: v.impact, nodes: v.nodes.length, target: v.nodes[0] && v.nodes[0].target })); });
+          report.info[`axe_content_${scheme}_${width}`] = res;
+          ok(`axe with the source lists open: no serious/critical violations (${scheme} @${width})`, res.filter(v => ['serious', 'critical'].includes(v.impact)).length === 0, JSON.stringify(res.filter(v => ['serious', 'critical'].includes(v.impact))));
+          await context.close();
+        }
+      }
+    }
   } catch (e) {
     report.fail.push('runner crashed: ' + (e.stack || e.message));
   } finally {

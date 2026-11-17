@@ -15,8 +15,8 @@
   <meta property="og:site_name" content="AYAKA（彩花）非公式応援サイト">
   <meta property="og:title" content="AYAKA（彩花）非公式応援サイト｜NiziU">
   <meta property="og:description" content="NiziU AYAKA（彩花）の非公式応援サイト。プロフィール、バースデーカウントダウン、ヒストリー、フォト、ビデオ通話の思い出、応援メッセージ。">
-  <meta property="og:url" content="https://dc9408222000-hub.github.io/ayaka-fansite/">
-  <meta property="og:image" content="https://dc9408222000-hub.github.io/ayaka-fansite/photos/og.jpg">
+  <meta property="og:url" content="https://ikukou0822.github.io/ayaka-fansite/">
+  <meta property="og:image" content="https://ikukou0822.github.io/ayaka-fansite/photos/og.jpg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="AYAKA（満面の笑顔）">
@@ -25,8 +25,8 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="AYAKA（彩花）非公式応援サイト｜NiziU">
   <meta name="twitter:description" content="NiziU AYAKA（彩花）の非公式応援サイト。プロフィール、バースデーカウントダウン、ヒストリー、フォト、ビデオ通話の思い出、応援メッセージ。">
-  <meta name="twitter:image" content="https://dc9408222000-hub.github.io/ayaka-fansite/photos/og.jpg">
-  <link rel="canonical" href="https://dc9408222000-hub.github.io/ayaka-fansite/">
+  <meta name="twitter:image" content="https://ikukou0822.github.io/ayaka-fansite/photos/og.jpg">
+  <link rel="canonical" href="https://ikukou0822.github.io/ayaka-fansite/">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -41,7 +41,7 @@
     <p class="noscript" lang="zh-Hant">本網站需要啟用 JavaScript 才能正常顯示。</p>
   </noscript>
 
-  <header class="site-header">
+  <header class="site-header site-header--nav">
     <div class="site-header__inner">
       <a class="brand" href="#top">
         <svg class="brand__mark" viewBox="0 0 64 64" width="22" height="22" aria-hidden="true" focusable="false">
@@ -61,6 +61,7 @@
           <li><a href="#profile" data-ui="navProfile"></a></li>
           <li><a href="#birthday" data-ui="navBirthday"></a></li>
           <li><a href="#timeline" data-ui="navTimeline"></a></li>
+          <li><a href="#works" data-ui="navWorks"></a></li>
           <li><a href="#gallery" data-ui="navGallery"></a></li>
           <li><a href="#messages" data-ui="navMessages"></a></li>
           <li><a href="#about" data-ui="navAbout"></a></li>
@@ -87,14 +88,12 @@
           <p class="hero__cta"><a class="link-arrow" href="#gallery" data-ui="heroCta"></a></p>
         </div>
         <figure class="hero__figure">
-          <div class="hero__glow" aria-hidden="true"></div>
           <div class="hero__frame">
             <picture>
               <source id="hero-source" type="image/webp" srcset="photos/ayaka-07-480.webp 480w, photos/ayaka-07-800.webp 800w, photos/ayaka-07-1024.webp 1024w, photos/ayaka-07-full.webp 1280w" sizes="(min-width: 1100px) 460px, (min-width: 720px) clamp(360px, 41vw, 460px), (min-width: 560px) and (orientation: landscape) 41vw, min(92vw, 40vh)">
               <img class="hero__img" id="hero-img" src="photos/ayaka-07.jpg" alt="満面の笑顔" width="1280" height="1600" loading="eager" fetchpriority="high" decoding="async">
             </picture>
           </div>
-          <p class="hero__kana-vertical" aria-hidden="true"><span data-hero="nameKana"></span><span data-hero="name"></span></p>
           <figcaption class="hero__caption" id="hero-caption"></figcaption>
         </figure>
       </div>
@@ -103,29 +102,40 @@
     <section id="profile" class="section" aria-labelledby="profile-title" tabindex="-1">
       <div class="section__inner">
         <header class="section__head">
-          <p class="eyebrow" data-ui="eyebrowProfile"></p>
           <h2 class="section__title" id="profile-title" data-ui="profileTitle"></h2>
           <p class="section__lead" data-ui="profileLead"></p>
         </header>
-        <dl class="profile" id="profile-list"></dl>
+        <div class="profile-body">
+          <dl class="profile" id="profile-list"></dl>
+          <!-- 有年份的興趣（data.js 的 hobbies）；沒有資料時整塊隱藏 -->
+          <div class="block" id="profile-hobbies">
+            <h3 class="block__title" data-ui="hobbiesTitle"></h3>
+            <p class="block__lead" data-ui="hobbiesLead"></p>
+            <dl class="profile profile--notes" id="hobbies-list"></dl>
+          </div>
+          <!-- 出處：預設收合，內容由 app.js 依 data.js 的 sources 填入 -->
+          <details class="sources" id="profile-sources">
+            <summary class="sources__summary" data-ui="sourcesSummary"></summary>
+            <ul class="sources__list" id="profile-sources-list" role="list"></ul>
+          </details>
+        </div>
       </div>
     </section>
 
     <section id="birthday" class="section section--soft" aria-labelledby="birthday-title" tabindex="-1">
       <div class="section__inner">
         <header class="section__head">
-          <p class="eyebrow" data-ui="eyebrowBirthday"></p>
           <h2 class="section__title" id="birthday-title" data-ui="birthdayTitle"></h2>
         </header>
         <div class="birthday" id="birthday-box">
-          <p class="birthday__mark" id="birthday-mark" aria-hidden="true"></p>
           <div class="birthday__countdown" id="birthday-countdown">
             <p class="birthday__lead" id="birthday-lead"></p>
             <div class="countdown" role="timer" aria-live="off" id="countdown">
               <div class="countdown__tile"><span class="countdown__num" data-unit="days">0</span><span class="countdown__unit" data-ui="unitDays"></span></div>
               <div class="countdown__tile"><span class="countdown__num" data-unit="hours">0</span><span class="countdown__unit" data-ui="unitHours"></span></div>
               <div class="countdown__tile"><span class="countdown__num" data-unit="minutes">0</span><span class="countdown__unit" data-ui="unitMinutes"></span></div>
-              <div class="countdown__tile"><span class="countdown__num" data-unit="seconds">0</span><span class="countdown__unit" data-ui="unitSeconds"></span></div>
+              <!-- 訪客開啟「減少動態效果」時不顯示每秒跳動的秒數（styles.css） -->
+              <div class="countdown__tile countdown__tile--seconds"><span class="countdown__num" data-unit="seconds">0</span><span class="countdown__unit" data-ui="unitSeconds"></span></div>
             </div>
             <p class="birthday__until" id="birthday-until"></p>
           </div>
@@ -140,22 +150,49 @@
     <section id="timeline" class="section" aria-labelledby="timeline-title" tabindex="-1">
       <div class="section__inner">
         <header class="section__head">
-          <p class="eyebrow" data-ui="eyebrowTimeline"></p>
           <h2 class="section__title" id="timeline-title" data-ui="timelineTitle"></h2>
           <p class="section__lead" data-ui="timelineLead"></p>
         </header>
-        <ol class="timeline" id="timeline-list" role="list"></ol>
+        <div class="timeline-body">
+          <ol class="timeline" id="timeline-list" role="list"></ol>
+          <details class="sources sources--timeline" id="timeline-sources">
+            <summary class="sources__summary" data-ui="sourcesSummary"></summary>
+            <ul class="sources__list" id="timeline-sources-list" role="list"></ul>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- 作品與訪談（data.js 的 works、interviews）：文字與外部連結，不放官方圖片、歌詞或嵌入元件 -->
+    <section id="works" class="section section--line" aria-labelledby="works-title" tabindex="-1">
+      <div class="section__inner">
+        <header class="section__head">
+          <h2 class="section__title" id="works-title" data-ui="worksTitle"></h2>
+          <p class="section__lead" data-ui="worksLead"></p>
+        </header>
+        <div class="works-body">
+          <div class="block block--first">
+            <h3 class="block__title" data-ui="worksListTitle"></h3>
+            <div class="entries" id="works-list"></div>
+          </div>
+          <div class="block">
+            <h3 class="block__title" data-ui="interviewsTitle"></h3>
+            <p class="block__lead" data-ui="interviewsLead"></p>
+            <div class="entries" id="interviews-list"></div>
+          </div>
+        </div>
       </div>
     </section>
 
     <section id="gallery" class="section section--soft" aria-labelledby="gallery-title" tabindex="-1">
       <div class="section__inner">
         <header class="section__head">
-          <p class="eyebrow" data-ui="eyebrowGallery"></p>
           <h2 class="section__title" id="gallery-title" data-ui="galleryTitle"></h2>
           <p class="section__lead" data-ui="galleryLead"></p>
         </header>
         <p id="gallery-hint" hidden></p>
+        <!-- 第一組（活動照片）的日期：整組同一天時只在這裡寫一次，每張底下不再重複 -->
+        <p class="gallery__meta" id="gallery-date" hidden></p>
         <ul class="gallery" id="gallery-grid" role="list"></ul>
         <!-- 第二組：視訊回憶（data.js 的 callPhotos） -->
         <div class="gallery-group" id="gallery-call">
@@ -174,22 +211,36 @@
     <section id="messages" class="section" aria-labelledby="messages-title" tabindex="-1">
       <div class="section__inner">
         <header class="section__head">
-          <p class="eyebrow" data-ui="eyebrowMessages"></p>
           <h2 class="section__title" id="messages-title" data-ui="messagesTitle"></h2>
-          <p class="section__lead" data-ui="messagesLead"></p>
         </header>
-        <ul class="messages" id="messages-list" role="list"></ul>
+        <div class="messages__body">
+          <!-- data.js 的 messages 是空的時候，這個清單會隱藏，只剩下面的入口小卡 -->
+          <ul class="messages" id="messages-list" role="list" hidden></ul>
+          <!-- 「彩花ちゃんへの手紙」（letter.html）の入口。文字は data.js の ui.letterEntry*（信的內容在 letter-data.js） -->
+          <a class="letter-entry" href="letter.html">
+            <span class="letter-entry__title" data-ui="letterEntryTitle"></span>
+            <span class="letter-entry__text" data-ui="letterEntryText"></span>
+            <span class="letter-entry__cta" data-ui="letterEntryCta"></span>
+          </a>
+          <!-- 合言葉のページ（別のサイト）への入口：小さな文字リンクだけ。data.js の site.roomUrl が空のあいだは表示しない -->
+          <p class="room-entry" id="room-entry" hidden><a rel="nofollow" data-ui="roomEntry"></a></p>
+        </div>
       </div>
     </section>
 
     <section id="about" class="section section--soft" aria-labelledby="about-title" tabindex="-1">
       <div class="section__inner section__inner--narrow">
         <header class="section__head">
-          <p class="eyebrow" data-ui="eyebrowAbout"></p>
           <h2 class="section__title" id="about-title" data-ui="aboutTitle"></h2>
         </header>
         <div class="about__body">
           <div class="prose" id="about-text"></div>
+          <!-- 官方連結（data.js 的 links）：外部連結，新分頁開啟 -->
+          <div class="links" id="official-links">
+            <h3 class="links__title" data-ui="linksTitle"></h3>
+            <ul class="links__list" id="links-list" role="list"></ul>
+            <p class="links__note" id="links-note" hidden></p>
+          </div>
           <div class="share">
             <p class="share__lead" data-ui="shareLead"></p>
             <div class="share__row">

@@ -5,7 +5,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { resolveShareUrl, stripQueryAndHash, toHttpUrl, shareMethod, canCopy, isAbortError, buildShareData } = require('../share.js');
 
-const CANON = 'https://dc9408222000-hub.github.io/ayaka-fansite/';
+const CANON = 'https://ikukou0822.github.io/ayaka-fansite/';
 const LOCAL = 'http://127.0.0.1:8000/?utm=1#gallery';
 
 test('有 canonical 時一律用 canonical 的絕對網址', () => {

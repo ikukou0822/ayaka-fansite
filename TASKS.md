@@ -1,5 +1,7 @@
 # 第二階段工作清單
 
+> **2026-11-14 補充**：這份文件寫的是公開的靜態網站。之後網站主人另外要求新增需要密碼的私密區（密碼登入、私人合照、訪客回覆），那是分開部署的後端，不受這份文件裡「純靜態、沒有後端、沒有表單」的限制；說明在 [backend/README.md](backend/README.md)。
+
 BRIEF.md 的網站完成並 push 之後，依序完成以下每一項。每完成一項就 commit 並 push 到 `main`（push 前先 `git pull --rebase origin main`）。中途不用停下來詢問；遇到需要網站主人決定的事，先採用最保守的做法，並記在 README 最後的「待確認事項」。
 
 另外有兩個獨立的審查 session 同時在檢查這個網站，報告放在其他分支（不會改動 `main`）：
@@ -40,12 +42,12 @@ BRIEF.md 的網站完成並 push 之後，依序完成以下每一項。每完�
 - 確認日文／中文切換時，每段文字都有對應翻譯，沒有漏掉的字串
 - 生日倒數用日本時間測試邊界：6/19 23:59:59、6/20 00:00:00、6/21 00:00:00。把計算邏輯抽成可測試的函式，用 node 寫測試
 - 無障礙：每張圖片都有 alt、文字對比足夠、只用鍵盤也能操作（包含相簿放大檢視的焦點管理）、尊重 `prefers-reduced-motion`
-- 確認所有路徑都是相對路徑，放在 `https://dc9408222000-hub.github.io/ayaka-fansite/` 這個子路徑下也能正常顯示
+- 確認所有路徑都是相對路徑，放在 `https://ikukou0822.github.io/ayaka-fansite/` 這個子路徑下也能正常顯示
 
 ## 4. 載入速度與分享
 
 - 為每張照片產生 WebP 版本（保留 JPEG 當備用），用 `<picture>`／`srcset` 依螢幕大小載入適當尺寸
-- 新增 Open Graph／Twitter Card meta；分享圖從 `photos/ayaka-07.jpg` 裁一張 1200×630 的 `photos/og.jpg`，`og:image` 用絕對網址 `https://dc9408222000-hub.github.io/ayaka-fansite/photos/og.jpg`
+- 新增 Open Graph／Twitter Card meta；分享圖從 `photos/ayaka-07.jpg` 裁一張 1200×630 的 `photos/og.jpg`，`og:image` 用絕對網址 `https://ikukou0822.github.io/ayaka-fansite/photos/og.jpg`
 - 新增原創 favicon（例如花朵加彩虹的簡單圖形，不要用任何官方 logo），以及 `manifest.webmanifest`
 - 新增同風格的 `404.html`
 

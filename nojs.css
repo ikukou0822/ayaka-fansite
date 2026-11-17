@@ -1,7 +1,7 @@
 /* =====================================================================
    nojs.css — 只在瀏覽器停用 JavaScript 時載入（index.html 的 <noscript><link>）。
    文字都由 app.js 從 data.js 填入，沒有 JS 時只留下提示、頁首字標與主視覺照片，
-   不顯示空白的導覽膠囊、倒數格子和空區塊。
+   不顯示空白的導覽連結、倒數數字和空區塊。
    ===================================================================== */
 .noscript {
   max-width: 36em;
@@ -17,9 +17,9 @@
 .lang-switch,
 .brand__sub,
 .hero__text,
-.hero__kana-vertical,
 .hero__caption,
 .section,
+.letter,
 .site-footer,
 .lightbox { display: none; }
 

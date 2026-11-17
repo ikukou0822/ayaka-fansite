@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests; require-trusted-types-for 'script'; trusted-types 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1a171c" media="(prefers-color-scheme: dark)">
+  <title>彩花ちゃんへの手紙｜AYAKA（彩花）非公式応援サイト</title>
+  <meta name="description" content="サイト管理人のYU HONGから、NiziUのAYAKA（彩花）へ。ひとりのファンが書いた、少し長い手紙です。">
+  <!-- 這封信是寫給一個人的：不讓搜尋引擎收錄（只有從首頁點進來的人會看到）。之後想讓搜尋引擎收錄，拿掉下面這一行即可。 -->
+  <meta name="robots" content="noindex">
+  <!-- 分享預覽。網址換了的話，下面的絕對網址也要一起改（index.html 也有同樣的設定）。 -->
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="AYAKA（彩花）非公式応援サイト">
+  <meta property="og:title" content="彩花ちゃんへの手紙｜AYAKA（彩花）非公式応援サイト">
+  <meta property="og:description" content="サイト管理人のYU HONGから、NiziUのAYAKA（彩花）へ。ひとりのファンが書いた、少し長い手紙です。">
+  <meta property="og:url" content="https://ikukou0822.github.io/ayaka-fansite/letter.html">
+  <meta property="og:image" content="https://ikukou0822.github.io/ayaka-fansite/photos/og.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="AYAKA（満面の笑顔）">
+  <meta property="og:locale" content="ja_JP">
+  <meta property="og:locale:alternate" content="zh_TW">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="彩花ちゃんへの手紙｜AYAKA（彩花）非公式応援サイト">
+  <meta name="twitter:description" content="サイト管理人のYU HONGから、NiziUのAYAKA（彩花）へ。ひとりのファンが書いた、少し長い手紙です。">
+  <link rel="canonical" href="https://ikukou0822.github.io/ayaka-fansite/letter.html">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+  <noscript><link rel="stylesheet" href="nojs.css"></noscript>
+</head>
+<body class="letter-page">
+  <a class="skip-link" href="#main" data-ui="skipLink"></a>
+  <noscript>
+    <p class="noscript" lang="ja">このサイトはJavaScriptを使用しています。ブラウザのJavaScriptを有効にしてご覧ください。</p>
+    <p class="noscript" lang="zh-Hant">本網站需要啟用 JavaScript 才能正常顯示。</p>
+  </noscript>
+
+  <!-- 信頁的頁首只有品牌字標（連回首頁）與語言切換，沒有導覽列，也不固定在上方：讀信時只該有一件事。 -->
+  <header class="site-header">
+    <div class="site-header__inner">
+      <a class="brand" href="index.html">
+        <svg class="brand__mark" viewBox="0 0 64 64" width="22" height="22" aria-hidden="true" focusable="false">
+          <path d="M12 46a20 20 0 0 1 40 0" fill="none" stroke="#f3b9c9" stroke-width="4" stroke-linecap="round"/>
+          <g fill="#f1a8bc"><circle cx="32" cy="22" r="6.5"/><circle cx="41.5" cy="29" r="6.5"/><circle cx="37.9" cy="40.2" r="6.5"/><circle cx="26.1" cy="40.2" r="6.5"/><circle cx="22.5" cy="29" r="6.5"/></g>
+          <circle cx="32" cy="32" r="5" fill="#fff6e3"/>
+        </svg>
+        <span class="brand__name" data-hero="name"></span>
+        <span class="brand__sub" data-ui="brandSub"></span>
+      </a>
+      <div class="lang-switch" role="group" data-ui-aria-label="langLabel">
+        <button type="button" class="lang-switch__btn" data-lang="ja" aria-pressed="false" data-ui="langJa" lang="ja"></button>
+        <button type="button" class="lang-switch__btn" data-lang="zh" aria-pressed="false" data-ui="langZh" lang="zh-Hant"></button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1">
+    <article class="letter" aria-labelledby="letter-title">
+      <header class="letter__head">
+        <h1 class="letter__title" id="letter-title"></h1>
+        <p class="letter__lead" id="letter-lead"></p>
+      </header>
+
+      <div class="letter__paper">
+        <p class="letter__salutation" id="letter-salutation"></p>
+        <div class="letter__body" id="letter-body"></div>
+        <p class="letter__signoff">
+          <span class="letter__date" id="letter-date"></span>
+          <span class="letter__signature" id="letter-signature"></span>
+        </p>
+      </div>
+
+      <p class="letter__back"><a class="link-arrow link-arrow--back" href="index.html" id="letter-back"></a></p>
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <p class="site-footer__brand" data-hero="name"></p>
+      <p class="site-footer__line" id="footer-disclaimer"></p>
+      <!-- 信頁沒有照片，所以沒有首頁的「写真は…」聲明 -->
+      <p class="site-footer__meta" id="footer-updated"></p>
+    </div>
+  </footer>
+
+  <script src="data.js"></script>
+  <script src="letter-data.js"></script>
+  <script src="letter.js"></script>
+</body>
+</html>

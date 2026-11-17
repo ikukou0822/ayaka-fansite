@@ -4,3 +4,17 @@ node_modules/
 qa-output/
 .DS_Store
 Thumbs.db
+
+# 私密區的後端（backend/）：本機測試用的金鑰檔與狀態，絕對不要放進 repo
+.dev.vars
+.dev.vars.*
+.env
+.env.*
+.wrangler/
+backend/.local/
+
+# Python 的快取
+__pycache__/
+
+# 部署後檢查的報告（裡面有自己的網址），不要放進 repo
+acceptance-report*.json

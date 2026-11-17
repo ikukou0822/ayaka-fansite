@@ -1,0 +1,27 @@
+{
+  "name": "ayaka-room-backend",
+  "private": true,
+  "description": "「合言葉のページ」（私密區）的後端：Cloudflare Workers + D1 + R2。和公開的靜態網站分開部署，不屬於 GitHub Pages 上的網站。",
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "python3 scripts/build_static.py",
+    "test": "node --test --test-concurrency=1 \"tests/*.spec.mjs\"",
+    "test:unit": "node --test tests/unit.spec.mjs",
+    "test:store": "node --test tests/store.spec.mjs",
+    "test:roomjs": "node --test tests/roomjs.spec.mjs",
+    "test:acceptance": "node --test tests/acceptance.spec.mjs",
+    "test:failclosed": "node --test tests/failclosed.spec.mjs",
+    "test:browser": "node --test tests/browser.spec.mjs",
+    "test:check": "node --test tests/check_deployed.spec.mjs",
+    "screenshots": "node scripts/screenshots.mjs",
+    "check:deployed": "node scripts/check_deployed.mjs",
+    "cpu:report": "node scripts/cpu_report.mjs"
+  },
+  "dependencies": {
+    "jose": "^6.0.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.162.0"
+  }
+}

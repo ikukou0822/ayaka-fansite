@@ -1,0 +1,27 @@
+{
+  // 訪客端：合言葉のページ（登入、看照片、送出回覆、登出）
+  "name": "ayaka-room",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-01",
+  "workers_dev": true,
+  // 預覽網址是另一個入口，用不到就關掉（訪客驗證寫在程式裡，從哪個網址進來都一樣要驗證）
+  "preview_urls": false,
+  // 公開的靜態檔只有樣式、腳本與圖示；裡面沒有任何私人內容
+  "assets": { "directory": "./public" },
+  "d1_databases": [
+    { "binding": "DB", "database_name": "ayaka-room", "database_id": "00000000-0000-0000-0000-000000000000", "migrations_dir": "../migrations" }
+  ],
+  "r2_buckets": [
+    { "binding": "PHOTOS", "bucket_name": "ayaka-room-photos" }
+  ],
+  "vars": {
+    // 「回首頁」連結的目的地（公開網站）
+    "PUBLIC_SITE_URL": "https://ikukou0822.github.io/ayaka-fansite/"
+    // 可以另外加的設定（不加就用預設值）：
+    //   "SESSION_TTL_SECONDS": "604800"   登入的有效期限（秒）；預設 7 天，最長 30 天
+    //   "REPLY_DAILY_CAP": "200"          所有訪客合計一天最多幾則回覆；預設 200
+  },
+  // 不把請求內容送進日誌服務；程式只會印出事件名稱
+  "observability": { "enabled": false }
+  // 金鑰不寫在這裡：PEPPER、SESSION_SECRET 用 wrangler secret put 設定
+}

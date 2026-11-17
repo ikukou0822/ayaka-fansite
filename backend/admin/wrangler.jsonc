@@ -1,0 +1,25 @@
+{
+  // 管理端：站主的收件匣、照片管理、標題與留言、訪客密碼。整個服務要放在 Cloudflare Access 後面（見 backend/README.md）
+  "name": "ayaka-room-admin",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-01",
+  "workers_dev": true,
+  // 預覽網址是另一個入口，用不到就關掉
+  "preview_urls": false,
+  // 這個服務沒有「靜態檔案」：樣式與腳本包在程式裡，確認管理者身分之後才送出
+  "d1_databases": [
+    { "binding": "DB", "database_name": "ayaka-room", "database_id": "00000000-0000-0000-0000-000000000000", "migrations_dir": "../migrations" }
+  ],
+  "r2_buckets": [
+    { "binding": "PHOTOS", "bucket_name": "ayaka-room-photos" }
+  ],
+  "vars": {
+    // 訪客端的網址（管理頁上「打開訪客看到的頁面」的連結；可以留空）
+    "VISITOR_URL": ""
+  },
+  "observability": { "enabled": false }
+  // 下面這些值不寫在這個檔案裡，用 wrangler secret put 設定（見 backend/README.md）。沒有設定好之前，管理端會拒絕所有請求：
+  //   PEPPER、SESSION_SECRET —— 金鑰，和訪客端設成同一組
+  //   TEAM_DOMAIN、POLICY_AUD —— 啟用 Cloudflare Access 時後台顯示的兩個值
+  //   ADMIN_EMAILS —— 站主用來登入 Access 的信箱（repo 是公開的，信箱不要寫進檔案）
+}
